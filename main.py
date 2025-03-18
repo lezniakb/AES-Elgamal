@@ -150,8 +150,8 @@ odszyfrowanie = oknoTekstowe(ramka, width=rozmiaryOkna[0], height=rozmiaryOkna[1
 odszyfrowanie.pack(padx=10, pady=5)
 
 # odszyfr z pliku
-odszyfrPliku = ct.CTkButton(ramka, text="Odszyfruj plik", width=(int(ustawienia[1]/3)), command=lambda: choose_file(True))
-odszyfrPliku.pack(padx=10, pady=10)
+odszyfrPliku = ct.CTkButton(ramka, text="Odszyfruj plik", width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=lambda: choose_file(True))
+odszyfrPliku.pack(padx=10, pady=5)
 root.mainloop()
 
 """
