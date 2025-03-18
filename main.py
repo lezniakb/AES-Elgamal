@@ -15,7 +15,9 @@ def ustawOkno():
     szerokosc = int(szerokosc / 1.7)
     wysokosc = int(wysokosc / 1.7)
 
-    return [tytul, szerokosc, wysokosc]
+    rozszerzalnosc = [False, False]
+
+    return [tytul, szerokosc, wysokosc, rozszerzalnosc]
 
 def oknoTekstowe(root, width=100, height=100, palette=None, **kwargs):
     # utworz ramke (okno) jako tlo oraz pole tekstowe
@@ -93,7 +95,7 @@ ustawienia = ustawOkno()
 
 root.title(ustawienia[0])
 root.geometry(f"{ustawienia[1]}x{ustawienia[2]}")
-
+root.resizable(ustawienia[3][0], ustawienia[3][1])
 # wstaw ramke do programu
 ramka = ct.CTkFrame(root, fg_color=kolory["podstawowy1"])
 ramka.pack(padx=40, pady=40, fill="both", expand=True)
@@ -135,6 +137,7 @@ listaKluczy.place(relx=0.213, rely=0.55, anchor=tk.CENTER)
 generator.place(relx=0.40, rely=0.55, anchor=tk.CENTER)
 klucz.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
 wczytywaczKlucza.place(relx=0.788, rely=0.55, anchor=tk.CENTER)
+
 
 root.mainloop()
 
