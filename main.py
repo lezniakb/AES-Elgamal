@@ -4,6 +4,7 @@
 
 # gui
 import customtkinter as ct
+import tkinter as tk
 
 def ustawOkno():
     tytul = "Zaszyfruj i odszyfruj AES"
@@ -62,7 +63,14 @@ def oknoTekstowe(root, width=100, height=100, palette=None, **kwargs):
 
     return okno
 
-# def wygenerujKlucz():
+def wykonaj():
+    return True
+
+def generujKlucz():
+    return True
+
+def wczytajKlucz():
+    return True
 
 # -------------------------
 # main
@@ -74,7 +82,9 @@ kolory = {"podstawowy1":"#18230F",
           "tekst":"#FFFFFF",
           "tekstWylaczony":"#808080"}
 
-
+klucze = ["128 bit",
+          "192 bit",
+          "256 bit"]
 # otworz okno dla tkintera (custom)
 root = ct.CTk()
 
@@ -94,8 +104,37 @@ napisKodowania = ct.CTkLabel(ramka, text="Szyfrowanie AES", fg_color=kolory["pod
 napisKodowania.pack(padx=10, pady=10)
 
 # wstaw okno do zakodowania tekstu
-kodowanie = oknoTekstowe(ramka, width=700, height=200, palette=kolory)
+kodowanie = oknoTekstowe(ramka, width=700, height=(ustawienia[2] //5), palette=kolory)
 kodowanie.pack(padx=10, pady=10)
+
+# wstaw plansze na srodku z opcjami
+srodek = ct.CTkFrame(ramka, width=700, height=(ustawienia[2] //3), corner_radius=0)
+srodek.pack(padx=10, pady=10, fill="both", expand=False)
+
+# przyciski w srodku
+# wczytywanie z pliku
+kodowaniePlik = ct.CTkButton(srodek, text="Wczytaj plik", width=(ustawienia[1]//4), height=(ustawienia[2]//10), command=lambda: choose_file(False))
+
+# szyfruj / odszyfruj
+szyfrOdszyfr = ct.CTkButton(srodek, text="Zaszyfruj / Odszyfruj",  width=(ustawienia[1]//4), height=(ustawienia[2]//10), command=wykonaj)
+
+# wybor klucza
+wyborKluczaTxt = ct.StringVar(value="Rozmiar klucza")
+listaKluczy = ct.CTkComboBox(srodek, values=klucze, variable=wyborKluczaTxt)
+generator = ct.CTkButton(srodek, text="Wygeneruj klucz!", command=generujKlucz)
+klucz = ct.CTkEntry(srodek, width=(int(ustawienia[1]//1.5)), placeholder_text="Klucz")
+wczytywaczKlucza = ct.CTkButton(srodek, text="Wczytaj klucz z pliku", command=wczytajKlucz)
+
+
+# wstaw przyciski
+kodowaniePlik.place(relx=0.30, rely=0.20, anchor=tk.CENTER)
+szyfrOdszyfr.place(relx=0.70, rely=0.20, anchor=tk.CENTER)
+
+# wstaw pole do generowania kluczy
+listaKluczy.place(relx=0.213, rely=0.55, anchor=tk.CENTER)
+generator.place(relx=0.40, rely=0.55, anchor=tk.CENTER)
+klucz.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
+wczytywaczKlucza.place(relx=0.788, rely=0.55, anchor=tk.CENTER)
 
 root.mainloop()
 
