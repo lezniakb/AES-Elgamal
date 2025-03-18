@@ -12,8 +12,8 @@ def ustawOkno():
     wysokosc = root.winfo_screenheight()
 
     # wez dane z monitora uzytkownika i zmniejsz
-    szerokosc = int(szerokosc / 1.7)
-    wysokosc = int(wysokosc / 1.7)
+    szerokosc = int(szerokosc / 1.4)
+    wysokosc = int(wysokosc / 1.2)
 
     rozszerzalnosc = [False, False]
 
@@ -103,14 +103,17 @@ ramka.pack(padx=40, pady=40, fill="both", expand=True)
 napisKodowania = ct.CTkLabel(ramka, text="Szyfrowanie AES", fg_color=kolory["podstawowy1"],
                              text_color=(kolory["tekst"]),
                              font=("Segoe UI", 26))
-napisKodowania.pack(padx=10, pady=10)
+napisKodowania.pack(padx=10, pady=0)
+
+# rozmiar okna szerokosc, wysokosc
+rozmiaryOkna = [int(ustawienia[1]/1.5),ustawienia[2] //7]
 
 # wstaw okno do zakodowania tekstu
-kodowanie = oknoTekstowe(ramka, width=700, height=(ustawienia[2] //5), palette=kolory)
-kodowanie.pack(padx=10, pady=10)
+kodowanie = oknoTekstowe(ramka, width=rozmiaryOkna[0], height=rozmiaryOkna[1], palette=kolory)
+kodowanie.pack(padx=10, pady=5)
 
 # wstaw plansze na srodku z opcjami
-srodek = ct.CTkFrame(ramka, width=700, height=(ustawienia[2] //3), corner_radius=0)
+srodek = ct.CTkFrame(ramka, width=(ustawienia[1] //3), height=(int(ustawienia[2] /3.5)), corner_radius=0)
 srodek.pack(padx=10, pady=10, fill="both", expand=False)
 
 # przyciski w srodku
@@ -124,9 +127,8 @@ szyfrOdszyfr = ct.CTkButton(srodek, text="Zaszyfruj / Odszyfruj",  width=(ustawi
 wyborKluczaTxt = ct.StringVar(value="Rozmiar klucza")
 listaKluczy = ct.CTkComboBox(srodek, values=klucze, variable=wyborKluczaTxt)
 generator = ct.CTkButton(srodek, text="Wygeneruj klucz!", command=generujKlucz)
-klucz = ct.CTkEntry(srodek, width=(int(ustawienia[1]//1.5)), placeholder_text="Klucz")
+klucz = ct.CTkEntry(srodek, width=(int(ustawienia[1]/1.5)), placeholder_text="Klucz")
 wczytywaczKlucza = ct.CTkButton(srodek, text="Wczytaj klucz z pliku", command=wczytajKlucz)
-
 
 # wstaw przyciski
 kodowaniePlik.place(relx=0.30, rely=0.20, anchor=tk.CENTER)
@@ -138,7 +140,18 @@ generator.place(relx=0.40, rely=0.55, anchor=tk.CENTER)
 klucz.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
 wczytywaczKlucza.place(relx=0.788, rely=0.55, anchor=tk.CENTER)
 
+napisOdszyfrowania = ct.CTkLabel(ramka, text="Deszfyrowanie AES", fg_color=kolory["podstawowy1"],
+                             text_color=(kolory["tekst"]),
+                             font=("Segoe UI", 26))
+napisOdszyfrowania.pack(padx=10, pady=0)
 
+# wstaw okno do  tekstu
+odszyfrowanie = oknoTekstowe(ramka, width=rozmiaryOkna[0], height=rozmiaryOkna[1], palette=kolory)
+odszyfrowanie.pack(padx=10, pady=5)
+
+# odszyfr z pliku
+odszyfrPliku = ct.CTkButton(ramka, text="Odszyfruj plik", width=(int(ustawienia[1]/3)), command=lambda: choose_file(True))
+odszyfrPliku.pack(padx=10, pady=10)
 root.mainloop()
 
 """
