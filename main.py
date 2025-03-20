@@ -7,7 +7,6 @@ import customtkinter as ct
 import tkinter as tk
 from tkinter import filedialog
 from CTkMessagebox import CTkMessagebox
-from base64 import b64encode, b64decode
 
 from crypto.Random import get_random_bytes
 
@@ -78,26 +77,59 @@ def oknoTekstowe(root, width=100, height=100, palette=None, **kwargs):
 def wykonaj():
     # funkcja wykonujaca szyfrowanie lub odszyfrowanie
     kluczTekstowy = klucz.get().strip()
+
+    # jesli nic nie podano w polu z kluczem to wyrzuc blad
     if not kluczTekstowy:
         CTkMessagebox(title="Wystąpił błąd!!", message="Podaj klucz.", icon="warning", icon_size=(61,61))
         return
+
+    kluczBitowy = int(wyborKluczaTxt.get().split()[0])
     # jezeli pole do szyfrowania zawiera tekst, szyfruj go
     tekst_jawny = kodowanie.get("0.0", ct.END).strip()
     if tekst_jawny:
-        zaszyfrowany = encrypt_text(tekst_jawny, kluczTekstowy, 128)
+        zaszyfrowany = encrypt_text(tekst_jawny, kluczTekstowy, kluczBitowy)
         odszyfrowanie.delete("0.0", tk.END)
         odszyfrowanie.insert("0.0", zaszyfrowany)
         CTkMessagebox(title="Udało się!!", message="Tekst został pomyślnie zaszyfrowany!", icon="check", icon_size=(61,61))
-    else:
+        """
+            else:
         # jezeli pole odszyfrowania zawiera tekst, odszyfruj go
         tekst_zaszyfrowany = odszyfrowanie.get("0.0", ct.END).strip()
         if tekst_zaszyfrowany:
-            jawny = decrypt_text(tekst_zaszyfrowany, kluczTekstowy, 128)
+            jawny = decrypt_text(tekst_zaszyfrowany, kluczTekstowy, key_bits)
             kodowanie.delete("0.0", tk.END)
             kodowanie.insert("0.0", jawny)
             CTkMessagebox(title="Udało się!!", message="Tekst został pomyślnie odszyfrowany!", icon="check", icon_size=(61,61))
         else:
             CTkMessagebox(title="Wystąpił błąd!!", message="Brak danych do deszyfrowania.", icon="warning", icon_size=(61,61))
+"""
+
+
+def decipher():
+    # Pobierz klucz z pola wejściowego
+    kluczTekstowy = klucz.get().strip()
+    if not kluczTekstowy:
+        CTkMessagebox(title="Błąd", message="Podaj klucz.", icon="warning", icon_size=(61, 61))
+        return
+
+    # Pobierz długość klucza (np. "128 bit") i wyciągnij wartość liczbową
+    key_bits = int(wyborKluczaTxt.get().split()[0])
+
+    # Pobierz zaszyfrowany tekst z dolnego pola (odszyfrowanie)
+    zaszyfrowany = odszyfrowanie.get("0.0", ct.END).strip()
+    if not zaszyfrowany:
+        CTkMessagebox(title="Błąd", message="Brak danych do odszyfrowania.", icon="warning", icon_size=(61, 61))
+        return
+
+    # Odszyfruj tekst przy użyciu funkcji decrypt_text z modułu AES
+    jawny = decrypt_text(zaszyfrowany, kluczTekstowy, key_bits)
+
+    # Wyczyść górne pole (kodowanie) i wstaw odszyfrowany tekst
+    kodowanie.delete("0.0", tk.END)
+    kodowanie.insert("0.0", jawny)
+
+    CTkMessagebox(title="Sukces", message="Tekst został odszyfrowany!", icon="check", icon_size=(61, 61))
+
 
 def generujKlucz():
     # pobierz wybrany rozmiar klucza
@@ -108,7 +140,7 @@ def generujKlucz():
         return
     # wez bajty ze slownika rozmiaru
     bajty = get_random_bytes(rozmiar_map[rozmiar_klucza])
-    kluczTekstowy = b64encode(bajty).decode()
+    kluczTekstowy = bajty.hex()
     klucz.delete(0, ct.END)
     klucz.insert(0, kluczTekstowy)
     CTkMessagebox(title="Udało się", message="Wygenerowano klucz", icon="info", icon_size=(61,61))
@@ -138,7 +170,7 @@ def wybierzPlik():
     if not sciezka_pliku:
         CTkMessagebox(title="info", message="nie wybrano pliku", icon="info", icon_size=(61,61))
         return
-    with open(sciezka_pliku, 'rb') as plik:
+    with open(sciezka_pliku, "rb") as plik:
         zawartosc_pliku = plik.read()
     kodowanie.delete("0.0", tk.END)
     kodowanie.insert("0.0", zawartosc_pliku.decode("utf-8", errors="ignore"))
@@ -192,8 +224,9 @@ srodek.pack(padx=10, pady=10, fill="both", expand=False)
 # wczytywanie z pliku
 kodowaniePlik = ct.CTkButton(srodek, text="Wczytaj plik", width=(ustawienia[1]//4), height=(ustawienia[2]//10), command=wybierzPlik)
 
-# szyfruj / odszyfruj
-szyfrOdszyfr = ct.CTkButton(srodek, text="Zaszyfruj / Odszyfruj",  width=(ustawienia[1]//4), height=(ustawienia[2]//10), command=wykonaj)
+# szyfruj i odszyfruj (przycisk)
+szyfruj = ct.CTkButton(srodek, text="Zaszyfruj \u2193",  width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=wykonaj)
+odszyfruj = ct.CTkButton(srodek, text="Odszyfruj \u2191",  width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=decipher)
 
 # wybor klucza
 wyborKluczaTxt = ct.StringVar(value="Rozmiar klucza")
@@ -204,13 +237,14 @@ wczytywaczKlucza = ct.CTkButton(srodek, text="Wczytaj klucz z pliku", command=wc
 
 # wstaw przyciski
 kodowaniePlik.place(relx=0.30, rely=0.20, anchor=tk.CENTER)
-szyfrOdszyfr.place(relx=0.70, rely=0.20, anchor=tk.CENTER)
+szyfruj.place(relx=0.70, rely=0.20, anchor=tk.CENTER)
+odszyfruj.place(relx=0.70, rely=0.50, anchor=tk.CENTER)
 
 # wstaw pole do generowania kluczy
 listaKluczy.place(relx=0.213, rely=0.55, anchor=tk.CENTER)
-generator.place(relx=0.40, rely=0.55, anchor=tk.CENTER)
+generator.place(relx=0.30, rely=0.55, anchor=tk.CENTER)
 klucz.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
-wczytywaczKlucza.place(relx=0.788, rely=0.55, anchor=tk.CENTER)
+wczytywaczKlucza.place(relx=0.4, rely=0.55, anchor=tk.CENTER)
 
 napisOdszyfrowania = ct.CTkLabel(ramka, text="Deszfyrowanie AES", fg_color=kolory["podstawowy1"],
                              text_color=(kolory["tekst"]),
