@@ -24,8 +24,10 @@ def ustawOkno():
 
     rozszerzalnosc = [False, False]
 
-    print(f"[INFO] szerokość={szerokosc}, wysokość={wysokosc}")
-    return [tytul, szerokosc, wysokosc, rozszerzalnosc]
+    czcionka = ("Segoe UI", szerokosc//70)
+
+    print(f"[INFO] szerokość={szerokosc}, wysokość={wysokosc}, czcionka={czcionka}")
+    return [tytul, szerokosc, wysokosc, rozszerzalnosc, czcionka]
 
 def oknoTekstowe(root, width=100, height=100, palette=None, **kwargs):
     # utworz ramke (okno) jako tlo oraz pole tekstowe
@@ -206,7 +208,7 @@ ramka.pack(padx=40, pady=40, fill="both", expand=True)
 # label z napisem zachecajacym do wprowadzenia tekstu
 napisKodowania = ct.CTkLabel(ramka, text="Szyfrowanie AES", fg_color=kolory["podstawowy1"],
                              text_color=(kolory["tekst"]),
-                             font=("Segoe UI", 26))
+                             font=ustawienia[4])
 napisKodowania.pack(padx=10, pady=0)
 
 # rozmiar okna szerokosc, wysokosc
@@ -222,33 +224,33 @@ srodek.pack(padx=10, pady=10, fill="both", expand=False)
 
 # przyciski w srodku
 # wczytywanie z pliku
-kodowaniePlik = ct.CTkButton(srodek, text="Wczytaj plik", width=(ustawienia[1]//4), height=(ustawienia[2]//10), command=wybierzPlik)
+kodowaniePlik = ct.CTkButton(srodek, text="Wczytaj plik", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//15), command=wybierzPlik)
 
 # szyfruj i odszyfruj (przycisk)
-szyfruj = ct.CTkButton(srodek, text="Zaszyfruj \u2193",  width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=wykonaj)
-odszyfruj = ct.CTkButton(srodek, text="Odszyfruj \u2191",  width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=decipher)
+szyfruj = ct.CTkButton(srodek, text="Zaszyfruj \u2193", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=wykonaj)
+odszyfruj = ct.CTkButton(srodek, text="Odszyfruj \u2191", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=decipher)
 
 # wybor klucza
 wyborKluczaTxt = ct.StringVar(value="Rozmiar klucza")
-listaKluczy = ct.CTkComboBox(srodek, values=klucze, variable=wyborKluczaTxt)
-generator = ct.CTkButton(srodek, text="Wygeneruj klucz!", command=generujKlucz)
-klucz = ct.CTkEntry(srodek, width=(int(ustawienia[1]/1.5)), placeholder_text="Klucz")
-wczytywaczKlucza = ct.CTkButton(srodek, text="Wczytaj klucz z pliku", command=wczytajKlucz)
+listaKluczy = ct.CTkComboBox(srodek, values=klucze, font=ustawienia[4], width=(ustawienia[1]//8), variable=wyborKluczaTxt)
+generator = ct.CTkButton(srodek, text="Wygeneruj klucz!", font=ustawienia[4], command=generujKlucz)
+klucz = ct.CTkEntry(srodek, font=ustawienia[4], width=(int(ustawienia[1]/1.5)), height=(ustawienia[2]//18), placeholder_text="Klucz")
+wczytywaczKlucza = ct.CTkButton(srodek, text="Wczytaj klucz z pliku", font=ustawienia[4], command=wczytajKlucz)
 
 # wstaw przyciski
-kodowaniePlik.place(relx=0.30, rely=0.20, anchor=tk.CENTER)
+kodowaniePlik.place(relx=0.30, rely=0.25, anchor=tk.CENTER)
 szyfruj.place(relx=0.70, rely=0.20, anchor=tk.CENTER)
 odszyfruj.place(relx=0.70, rely=0.50, anchor=tk.CENTER)
 
 # wstaw pole do generowania kluczy
-listaKluczy.place(relx=0.213, rely=0.55, anchor=tk.CENTER)
-generator.place(relx=0.30, rely=0.55, anchor=tk.CENTER)
-klucz.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
-wczytywaczKlucza.place(relx=0.4, rely=0.55, anchor=tk.CENTER)
+listaKluczy.place(relx=0.15, rely=0.55, anchor=tk.CENTER)
+generator.place(relx=0.29, rely=0.55, anchor=tk.CENTER)
+wczytywaczKlucza.place(relx=0.43, rely=0.55, anchor=tk.CENTER)
+klucz.place(relx=0.5, rely=0.80, anchor=tk.CENTER)
 
 napisOdszyfrowania = ct.CTkLabel(ramka, text="Deszfyrowanie AES", fg_color=kolory["podstawowy1"],
                              text_color=(kolory["tekst"]),
-                             font=("Segoe UI", 26))
+                             font=ustawienia[4])
 napisOdszyfrowania.pack(padx=10, pady=0)
 
 # wstaw okno do  tekstu
@@ -256,7 +258,7 @@ odszyfrowanie = oknoTekstowe(ramka, width=rozmiaryOkna[0], height=rozmiaryOkna[1
 odszyfrowanie.pack(padx=10, pady=5)
 
 # odszyfr z pliku
-odszyfrPliku = ct.CTkButton(ramka, text="Odszyfruj plik", width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=wybierzPlik)
+odszyfrPliku = ct.CTkButton(ramka, text="Odszyfruj plik", font=ustawienia[4], width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=wybierzPlik)
 odszyfrPliku.pack(padx=10, pady=5)
 root.mainloop()
 
