@@ -244,8 +244,8 @@ odszyfruj.place(relx=0.70, rely=0.50, anchor=tk.CENTER)
 
 # wstaw pole do generowania kluczy
 listaKluczy.place(relx=0.15, rely=0.55, anchor=tk.CENTER)
-generator.place(relx=0.29, rely=0.55, anchor=tk.CENTER)
-wczytywaczKlucza.place(relx=0.43, rely=0.55, anchor=tk.CENTER)
+generator.place(relx=0.315, rely=0.55, anchor=tk.CENTER)
+wczytywaczKlucza.place(relx=0.47, rely=0.55, anchor=tk.CENTER)
 klucz.place(relx=0.5, rely=0.80, anchor=tk.CENTER)
 
 napisOdszyfrowania = ct.CTkLabel(ramka, text="Deszfyrowanie AES", fg_color=kolory["podstawowy1"],
