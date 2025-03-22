@@ -285,7 +285,34 @@ zapiszBtn = ct.CTkButton(ramka, text="Zapisz zaszyfrowany plik", font=ustawienia
                           width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=zapiszPlik)
 zapiszBtn.pack(padx=10, pady=5)
 
-
-
-
 root.mainloop()
+
+"""
+SPOSÓB DZIAŁANIA
+
+1. Bierzemy nasz klucz szyfrowania (o długości 128, 192 lub 256 bitów).
+Z niego generujemy pod-klucze (round keys) które rotacyjnie się zmieniają co jedną rundę.
+Ilość pod-kluczy to (liczba rund + 1)
+Dzięki temu mamy podklucz do początkowej operacji (AddRoundKey) oraz do każdej rundy szyfrowania.
+
+2. Initial AddRoundKey – Początkowe XORowanie Bloku z Kluczem
+Pierwsza operacja na danych wejściowych (blokach) przed rozpoczęciem głównych rund
+Cały blok danych (który jest reprezentowany jako macierz 4x4 bajtów)
+jest XORowany z pierwszym wygenerowanym pod-kluczem.
+
+3. Główne Rundy (9, 11 lub 13) – Kolejne Etapy Szyfrowania
+Każda z rund ma kilka operacji:
+a) SubBytes
+    Każdy bajt w macierzyjest zastępowany wartością z S-boxa
+b) ShiftRows
+    przesuwamy wiersze. Pierwszego nie przesuwamy, drugi przesuwamy o jeden w lewo,
+    trzeci wiersz przesuwamy o 2 pola w lewo, czwarty o 3 pola w lewo.
+c) MixColumns
+    Każda kolumna macierzy jest traktowana jako wielomian i mnożona przez stałą macierz.
+    mnożenie można zrealizować jako przesunięcie bitowe w lewo (x << 1); 
+    jeśli najbardziej znaczący bit jest równy 1, następuje dodatkowe XOR z 0x1b (odpowiednik modulo wielomianu).
+d) AddRoundKey
+    Cały blok jest ponownie XORowany i powtarza się od punktu a)
+    
+Ostatnia runda nie robi mix columns.
+"""

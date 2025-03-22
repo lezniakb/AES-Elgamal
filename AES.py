@@ -2,8 +2,9 @@ import copy
 from math import ceil
 from random import randrange
 
-# s-box i odwrotna s-box
-s_box = (
+# s-box i odwrocony s-box
+# tablica, która służy do podstawienia bajtów w szyfrowaniu i deszyfrowaniu
+sbox = (
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
     0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0,
     0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, 0xb7, 0xfd, 0x93, 0x26,
@@ -28,7 +29,7 @@ s_box = (
     0xb0, 0x54, 0xbb, 0x16,
 )
 
-inv_s_box = (
+odwr_sbox = (
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e,
     0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87,
     0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb, 0x54, 0x7b, 0x94, 0x32,
@@ -54,6 +55,8 @@ inv_s_box = (
 )
 
 # ilosc rund w zaleznosci od dlugosci klucza
+# rundy to ilosc iteracji przez operacje podstawienia (S-box),
+# permutacja (ShiftRows), mieszanie (MixColumns), oraz dodanie klucza (AddRoundKey)
 rounds_amount = {128: 10, 192: 12, 256: 14}
 
 def round_constants(n):
@@ -72,11 +75,11 @@ def rot_word(word):
     return ((word << 8) & 0xffffffff) | (word >> 24)
 
 def sub_word(word):
-    # podstawia bajty w slowie przez wartosci z s_box
-    return ((s_box[(word >> 24) & 0xff] << 24) |
-            (s_box[(word >> 16) & 0xff] << 16) |
-            (s_box[(word >> 8) & 0xff] << 8) |
-            s_box[word & 0xff])
+    # podstawia bajty w slowie przez wartosci z sbox
+    return ((sbox[(word >> 24) & 0xff] << 24) |
+            (sbox[(word >> 16) & 0xff] << 16) |
+            (sbox[(word >> 8) & 0xff] << 8) |
+            sbox[word & 0xff])
 
 def key_expansion(key, key_length):
     # rozszerza klucz do rund
@@ -112,16 +115,16 @@ def sub_keys(W, key_length):
     return subKeys
 
 def sub_bytes(matrix):
-    # podstawia kazdy bajt przez wartosc z s_box
+    # podstawia kazdy bajt przez wartosc z sbox
     for i in range(4):
         for j in range(4):
-            matrix[i][j] = s_box[matrix[i][j]]
+            matrix[i][j] = sbox[matrix[i][j]]
 
 def inv_sub_bytes(matrix):
-    # przywrocenie bajtow z inv_s_box
+    # przywrocenie bajtow z odwr_sbox
     for i in range(4):
         for j in range(4):
-            matrix[i][j] = inv_s_box[matrix[i][j]]
+            matrix[i][j] = odwr_sbox[matrix[i][j]]
 
 def shift_rows(matrix):
     # przesuwa wiersze macierzy
@@ -207,7 +210,6 @@ def text_to_matrix(text):
         data = data[:16]
     return [list(data[i*4:(i+1)*4]) for i in range(4)]
 
-
 def matrix_to_text(matrix):
     # laczy macierz do tekstu, ignorujac zera
     bytes_arr = []
@@ -230,8 +232,6 @@ def encrypt_text(plaintext, key_text, key_length):
         encrypted_block = ''.join(f"{val:02x}" for row in encrypted_matrix for val in row)
         encrypted_result.append(encrypted_block)
     return ''.join(encrypted_result)
-
-
 
 def decrypt_text(ciphertext, key_text, key_length):
     key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
