@@ -93,25 +93,13 @@ def wykonaj():
         odszyfrowanie.delete("0.0", tk.END)
         odszyfrowanie.insert("0.0", zaszyfrowany)
         CTkMessagebox(title="Udało się!!", message="Tekst został pomyślnie zaszyfrowany!", icon="check", icon_size=(61,61))
-        """
-            else:
-        # jezeli pole odszyfrowania zawiera tekst, odszyfruj go
-        tekst_zaszyfrowany = odszyfrowanie.get("0.0", ct.END).strip()
-        if tekst_zaszyfrowany:
-            jawny = decrypt_text(tekst_zaszyfrowany, kluczTekstowy, key_bits)
-            kodowanie.delete("0.0", tk.END)
-            kodowanie.insert("0.0", jawny)
-            CTkMessagebox(title="Udało się!!", message="Tekst został pomyślnie odszyfrowany!", icon="check", icon_size=(61,61))
-        else:
-            CTkMessagebox(title="Wystąpił błąd!!", message="Brak danych do deszyfrowania.", icon="warning", icon_size=(61,61))
-"""
 
 
 def decipher():
     # Pobierz klucz z pola wejściowego
     kluczTekstowy = klucz.get().strip()
     if not kluczTekstowy:
-        CTkMessagebox(title="Błąd", message="Podaj klucz.", icon="warning", icon_size=(61, 61))
+        CTkMessagebox(title="Wystąpił błąd", message="Podaj klucz.", icon="warning", icon_size=(61, 61))
         return
 
     # Pobierz długość klucza (np. "128 bit") i wyciągnij wartość liczbową
@@ -120,7 +108,7 @@ def decipher():
     # Pobierz zaszyfrowany tekst z dolnego pola (odszyfrowanie)
     zaszyfrowany = odszyfrowanie.get("0.0", ct.END).strip()
     if not zaszyfrowany:
-        CTkMessagebox(title="Błąd", message="Brak danych do odszyfrowania.", icon="warning", icon_size=(61, 61))
+        CTkMessagebox(title="Wystąpił błąd", message="Brak danych do odszyfrowania.", icon="warning", icon_size=(61, 61))
         return
 
     # Odszyfruj tekst przy użyciu funkcji decrypt_text z modułu AES
@@ -170,20 +158,20 @@ def wybierzPlik():
         filetypes=[("wszystkie pliki", "*.*")]
     )
     if not sciezka_pliku:
-        CTkMessagebox(title="info", message="nie wybrano pliku", icon="info", icon_size=(61,61))
+        CTkMessagebox(title="info", message="Nie wybrano pliku", icon="info", icon_size=(61,61))
         return
     with open(sciezka_pliku, "rb") as plik:
         zawartosc_pliku = plik.read()
     kodowanie.delete("0.0", tk.END)
     kodowanie.insert("0.0", zawartosc_pliku.decode("utf-8", errors="ignore"))
-    CTkMessagebox(title="sukces", message="plik wczytany pomyslnie", icon="check", icon_size=(61,61))
+    CTkMessagebox(title="Udało się", message="Plik został wczytany", icon="check", icon_size=(61,61))
 
 
 # -------------------------
 # main
 # paleta barw
-kolory = {"podstawowy1":"#18230F",
-          "podstawowy2":"#27391C",
+kolory = {"podstawowy1":"#1A1A19",
+          "podstawowy2":"#123524",
           "podstawowy3":"#255F38",
           "podstawowy4":"#1F7D53",
           "tekst":"#FFFFFF",
@@ -261,18 +249,3 @@ odszyfrowanie.pack(padx=10, pady=5)
 odszyfrPliku = ct.CTkButton(ramka, text="Odszyfruj plik", font=ustawienia[4], width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=wybierzPlik)
 odszyfrPliku.pack(padx=10, pady=5)
 root.mainloop()
-
-"""
-TODO:
-1. zmienić kolory w słowniku "kolory" (to jest główne miejsce z którego zaciągane są kolorki
-2. poprawić jeszcze wielkość czcionki, i przyciski w ramce w środku
-3. zaszyfruj/odszyfruj - naprawić algorytm (AES)
-
-checklista:
-wczytywanie pliku: dziala!
-wybór wielkości bitów do generowania: działa! (sprawdza poprawność też)
-wczytywanie dowolnego pliku: do sprawdzenia...
-generowanie klucza: zmienić algorytm (jest b64, powinien być inny)
-szyfrowanie/deszyfrowanie tekst: nie działa
-
-"""
