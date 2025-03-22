@@ -120,6 +120,24 @@ def decipher():
 
     CTkMessagebox(title="Sukces", message="Tekst został odszyfrowany!", icon="check", icon_size=(61, 61))
 
+def zapiszPlik():
+    # Open a file-save dialog to choose where to save the ciphered text
+    sciezka_pliku = filedialog.asksaveasfilename(
+        title="Zapisz zaszyfrowany tekst",
+        defaultextension=".txt",
+        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="Uwaga", message="Nie wybrano miejsca do zapisu", icon="warning", icon_size=(61,61))
+        return
+    # Retrieve the ciphered text from the output textbox
+    tekst = odszyfrowanie.get("0.0", tk.END).strip()
+    try:
+        with open(sciezka_pliku, "w", encoding="utf-8") as plik:
+            plik.write(tekst)
+        CTkMessagebox(title="Sukces", message="Zapisano zaszyfrowany tekst!", icon="check", icon_size=(61,61))
+    except Exception as e:
+        CTkMessagebox(title="Błąd", message=f"Nie udało się zapisać pliku:\n{e}", icon="warning", icon_size=(61,61))
 
 def generujKlucz():
     # pobierz wybrany rozmiar klucza
@@ -150,6 +168,20 @@ def wczytajKlucz():
     klucz.insert(0, klucz_odczytany.decode("utf-8"))
     CTkMessagebox(title="Udało się!", message="Klucz został wczytany pomyślnie!", icon="check", icon_size=(61,61))
 
+def wczytajZaszyfrowany():
+    # Open a file dialog to select the file containing the ciphered text.
+    sciezka_pliku = filedialog.askopenfilename(
+        title="Wybierz plik zaszyfrowanego tekstu",
+        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="Uwaga!", message="Nie wybrano pliku", icon="info", icon_size=(61,61))
+        return
+    with open(sciezka_pliku, "rb") as plik:
+        zawartosc_pliku = plik.read()
+    odszyfrowanie.delete("0.0", tk.END)
+    odszyfrowanie.insert("0.0", zawartosc_pliku.decode("utf-8", errors="ignore"))
+    CTkMessagebox(title="Sukces", message="Plik został wczytany", icon="check", icon_size=(61,61))
 
 def wybierzPlik():
     # funkcja do wyboru pliku do szyfrowania/odszyfrowania, uzywamy istniejacego okna
@@ -245,7 +277,15 @@ napisOdszyfrowania.pack(padx=10, pady=0)
 odszyfrowanie = oknoTekstowe(ramka, width=rozmiaryOkna[0], height=rozmiaryOkna[1], palette=kolory)
 odszyfrowanie.pack(padx=10, pady=5)
 
-# odszyfr z pliku
-odszyfrPliku = ct.CTkButton(ramka, text="Odszyfruj plik", font=ustawienia[4], width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=wybierzPlik)
-odszyfrPliku.pack(padx=10, pady=5)
+wczytajPlikBtn = ct.CTkButton(ramka, text="Wczytaj zaszyfrowany plik", font=ustawienia[4],
+                              width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=wczytajZaszyfrowany)
+wczytajPlikBtn.pack(padx=10, pady=5)
+
+zapiszBtn = ct.CTkButton(ramka, text="Zapisz zaszyfrowany plik", font=ustawienia[4],
+                          width=(int(ustawienia[1]/3)), height=(int(ustawienia[2]/17)), command=zapiszPlik)
+zapiszBtn.pack(padx=10, pady=5)
+
+
+
+
 root.mainloop()

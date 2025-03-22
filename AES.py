@@ -199,14 +199,14 @@ def decrypt_matrix(matrix, key, key_length):
     return matrix
 
 def text_to_matrix(text):
-    # zamienia tekst na macierz 4x4 (lista list) - wypelnia zerami jesli potrzeba
-    bytes_arr = [ord(c) for c in text]
-    if len(bytes_arr) < 16:
-        bytes_arr += [0] * (16 - len(bytes_arr))
-    matrix = []
-    for i in range(4):
-        matrix.append(bytes_arr[i*4:(i+1)*4])
-    return matrix
+    # Convert text to bytes using UTF-8 and build a 4x4 matrix (16-byte block).
+    data = text.encode('utf-8')
+    if len(data) < 16:
+        data += b'\x00' * (16 - len(data))
+    else:
+        data = data[:16]
+    return [list(data[i*4:(i+1)*4]) for i in range(4)]
+
 
 def matrix_to_text(matrix):
     # laczy macierz do tekstu, ignorujac zera
@@ -216,25 +216,32 @@ def matrix_to_text(matrix):
     return ''.join(chr(b) for b in bytes_arr if b != 0)
 
 def encrypt_text(plaintext, key_text, key_length):
-    # szyfruje tekst, przyjmujac klucz jako tekst
     key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
-    matrix = text_to_matrix(plaintext)
-    encrypted_matrix = encrypt_matrix(matrix, key_int, key_length)
-    # konwertuje zaszyfrowany blok do hex string
-    encrypted_bytes = []
-    for row in encrypted_matrix:
-        for val in row:
-            encrypted_bytes.append(f"{val:02x}")
-    return ''.join(encrypted_bytes)
+    encrypted_result = []
+    # Work with the full plaintext as bytes and process it in 16-byte blocks.
+    data = plaintext.encode('utf-8')
+    for i in range(0, len(data), 16):
+        block = data[i:i+16]
+        if len(block) < 16:
+            block += b'\x00' * (16 - len(block))
+        # Create the 4x4 matrix from this block.
+        matrix = [list(block[j*4:(j+1)*4]) for j in range(4)]
+        encrypted_matrix = encrypt_matrix(matrix, key_int, key_length)
+        encrypted_block = ''.join(f"{val:02x}" for row in encrypted_matrix for val in row)
+        encrypted_result.append(encrypted_block)
+    return ''.join(encrypted_result)
+
+
 
 def decrypt_text(ciphertext, key_text, key_length):
-    # odszyfrowuje hex string do tekstu jawnego
     key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
-    bytes_arr = [int(ciphertext[i:i+2], 16) for i in range(0, len(ciphertext), 2)]
-    if len(bytes_arr) < 16:
-        bytes_arr += [0] * (16 - len(bytes_arr))
-    matrix = []
-    for i in range(4):
-        matrix.append(bytes_arr[i*4:(i+1)*4])
-    decrypted_matrix = decrypt_matrix(matrix, key_int, key_length)
-    return matrix_to_text(decrypted_matrix)
+    decrypted_bytes = bytearray()
+    # Each block is 16 bytes (represented by 32 hex characters)
+    for i in range(0, len(ciphertext), 32):
+        block_hex = ciphertext[i:i+32]
+        block = bytes(int(block_hex[j:j+2], 16) for j in range(0, 32, 2))
+        # Build the 4x4 matrix from this block.
+        matrix = [list(block[j*4:(j+1)*4]) for j in range(4)]
+        decrypted_matrix = decrypt_matrix(matrix, key_int, key_length)
+        decrypted_bytes.extend(bytes(val for row in decrypted_matrix for val in row))
+    return decrypted_bytes.rstrip(b'\x00').decode('utf-8', errors='ignore')
