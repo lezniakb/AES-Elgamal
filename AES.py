@@ -1,7 +1,3 @@
-import copy
-from math import ceil
-from random import randrange
-
 # s-box i odwrocony s-box
 # tablica, która służy do podstawienia bajtów w szyfrowaniu i deszyfrowaniu
 sbox = (
@@ -57,33 +53,59 @@ odwr_sbox = (
 # ilosc rund w zaleznosci od dlugosci klucza
 # rundy to ilosc iteracji przez operacje podstawienia (S-box),
 # permutacja (ShiftRows), mieszanie (MixColumns), oraz dodanie klucza (AddRoundKey)
-rounds_amount = {128: 10, 192: 12, 256: 14}
+rundyKluczy = {128: 10, 192: 12, 256: 14}
 
-def round_constants(n):
-    # generuje stala rundowa
-    rcon = [0] * n
+def iloscRund(n):
+    # n to ilosc rund podanych przez klucz (np. 10 rund dla 128 bit)
+    # stworz liste zer, tyle ile jest rund
+    rundy = [0] * n
     for i in range(n):
         if i == 0:
-            rcon[i] = 0x1
+            # pierwszy element jest ustawiany na 0x1
+            rundy[i] = 0x1
         else:
-            prev = rcon[i - 1]
-            rcon[i] = prev * 2 if prev < 0x80 else (prev * 2) ^ 0x11b
-    return rcon
+            # wez stala z poprzedniej rundy
+            prev = rundy[i - 1]
+            # podwajamy wartosc poprzedniej stalej rundowej
+            rundy[i] = prev * 2
 
-def rot_word(word):
-    # przesuwa slowo o 1 bajt w lewo
-    return ((word << 8) & 0xffffffff) | (word >> 24)
+            # jesli wynik przekracza 8 bitów, wykonujemy operację XOR z 0x11b
+            if rundy[i] >= 0x100:
+                rundy[i] ^= 0x11b
 
-def sub_word(word):
-    # podstawia bajty w slowie przez wartosci z sbox
-    return ((sbox[(word >> 24) & 0xff] << 24) |
-            (sbox[(word >> 16) & 0xff] << 16) |
-            (sbox[(word >> 8) & 0xff] << 8) |
-            sbox[word & 0xff])
+    return rundy
+
+def przesun(word):
+    # przesun slowo o 8 bitow w lewo (1 bajt)
+    przesunieteLewo = word << 8
+    # uzyj maski zeby wynik na pewno miescil sie w 32 bitach
+    maskowanePrzesunieteLewo = przesunieteLewo & 0xFFFFFFFF
+    # przesuj slowo o 24 bity w prawo (3 bajty)
+    przesunietePrawo = word >> 24
+    # zlacz wyniki
+    wynik = maskowanePrzesunieteLewo | przesunietePrawo
+    return wynik
+
+
+def podstawSlowo(word):
+    # zapisuje wartosci bajtow od najbardziej znaczacego
+    bajt1 = (word >> 24) & 0xff
+    bajt2 = (word >> 16) & 0xff
+    bajt3 = (word >> 8) & 0xff
+    bajt4 = word & 0xff
+    # za pomoca sboxa postawiane sa nowe bajty
+    nowyBajt1 = sbox[bajt1]
+    nowyBajt2 = sbox[bajt2]
+    nowyBajt3 = sbox[bajt3]
+    nowyBajt4 = sbox[bajt4]
+
+    # sklejamy zaktualizowane bajty w nowe słowo
+    return (nowyBajt1 << 24) | (nowyBajt2 << 16) | (nowyBajt3 << 8) | nowyBajt4
+
 
 def key_expansion(key, key_length):
     # rozszerza klucz do rund
-    rcon = round_constants(rounds_amount[key_length] + 1)
+    rund = iloscRund(rundyKluczy[key_length] + 1)
     if key_length == 128:
         N = 4
     elif key_length == 192:
@@ -93,13 +115,13 @@ def key_expansion(key, key_length):
     mask = 0xffffffff
     # klucz przekonwertowany do listy N 32-bitowych liczb
     K = [(key >> (32 * i)) & mask for i in range(N)]
-    R = rounds_amount[key_length] + 1
+    R = rundyKluczy[key_length] + 1
     W = [0] * (N * R)
     for i in range(N * R):
         if i < N:
             W[i] = K[i]
         elif i % N == 0:
-            W[i] = W[i - N] ^ sub_word(rot_word(W[i - 1])) ^ rcon[i // N]
+            W[i] = W[i - N] ^ podstawSlowo(przesun(W[i - 1])) ^ rund[i // N]
         else:
             W[i] = W[i - N] ^ W[i - 1]
     return W
@@ -107,7 +129,7 @@ def key_expansion(key, key_length):
 def sub_keys(W, key_length):
     # dzieli rozszerzony klucz na poszczegolne rundy
     subKeys = []
-    for i in range(rounds_amount[key_length] + 1):
+    for i in range(rundyKluczy[key_length] + 1):
         sub_key = 0
         for j in range(4):
             sub_key = (sub_key << 32) + W[i * 4 + j]
@@ -176,24 +198,24 @@ def encrypt_matrix(matrix, key, key_length):
     W = key_expansion(key, key_length)
     subKeys = sub_keys(W, key_length)
     add_round_key(matrix, subKeys[0])
-    for i in range(1, rounds_amount[key_length]):
+    for i in range(1, rundyKluczy[key_length]):
         sub_bytes(matrix)
         shift_rows(matrix)
         mix_columns(matrix)
         add_round_key(matrix, subKeys[i])
     sub_bytes(matrix)
     shift_rows(matrix)
-    add_round_key(matrix, subKeys[rounds_amount[key_length]])
+    add_round_key(matrix, subKeys[rundyKluczy[key_length]])
     return matrix
 
 def decrypt_matrix(matrix, key, key_length):
     # odszyfrowanie macierzy
     W = key_expansion(key, key_length)
     subKeys = sub_keys(W, key_length)
-    add_round_key(matrix, subKeys[rounds_amount[key_length]])
+    add_round_key(matrix, subKeys[rundyKluczy[key_length]])
     inv_shift_rows(matrix)
     inv_sub_bytes(matrix)
-    for i in range(rounds_amount[key_length] - 1, 0, -1):
+    for i in range(rundyKluczy[key_length] - 1, 0, -1):
         add_round_key(matrix, subKeys[i])
         inv_mix_columns(matrix)
         inv_shift_rows(matrix)
