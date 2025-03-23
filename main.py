@@ -316,3 +316,5 @@ d) AddRoundKey
     
 Ostatnia runda nie robi mix columns.
 """
+
+# DODAC: zabezpieczenie ze klucz nie moze byc dowolny!!

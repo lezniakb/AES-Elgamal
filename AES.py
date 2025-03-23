@@ -103,87 +103,128 @@ def podstawSlowo(word):
     return (nowyBajt1 << 24) | (nowyBajt2 << 16) | (nowyBajt3 << 8) | nowyBajt4
 
 
-def key_expansion(key, key_length):
-    # rozszerza klucz do rund
-    rund = iloscRund(rundyKluczy[key_length] + 1)
-    if key_length == 128:
+def tworzenieKluczyRund(key, lenKlucz):
+    # tworzy klucze rundowe, dzieli klucz glowny na kawalki
+    rund = iloscRund(rundyKluczy[lenKlucz] + 1)
+    # N to ilosc liczb wewnatrz listy. Tj jesli mamy 128 bit, to lista ma -> 4 elementy po 32 bity
+    # jesli klucz jest 192 to lista na -> 6 elementow 32 bit itd.
+    if lenKlucz == 128:
         N = 4
-    elif key_length == 192:
+    elif lenKlucz == 192:
         N = 6
-    elif key_length == 256:
+    elif lenKlucz == 256:
         N = 8
+    else:
+        print("DEBUG: wystapil blad przy tworzeniu kluczy rundowych. Ustawiono domyslnie N=4 (128 bit)")
+        N = 4
     mask = 0xffffffff
-    # klucz przekonwertowany do listy N 32-bitowych liczb
-    K = [(key >> (32 * i)) & mask for i in range(N)]
-    R = rundyKluczy[key_length] + 1
+
+    # lista K będzie przechowywać poszczególne 32-bitowe fragmenty klucza
+    K = []
+    # przechodzimy po kazdym kluczu w zakresie N (czyli ilosci "kawalkow")
+    for i in range(N):
+        # przesuniecie bitow klucza w prawo o 32*i miejsc - wydzielenie 32bit fragmetnu
+        przesuniecie = key >> (32 * i)
+        # aby wyciagnac tylko 32 bity dodajemy mastke 0xffffffff
+        kawalek = przesuniecie & mask
+        # dodajemy oddzielony kawalek klucza do listy K
+        K.append(kawalek)
+
+    # R - ilosc rund, ktora trzeba lacznie wykonac na podstawie dlugosci klucza. Dodajemy 1, bo numeracja jest od 0
+    R = rundyKluczy[lenKlucz] + 1
+
+    # lista W przechowuje wszystkie klucze rundowe
+    # N - liczba slow w kluczu
+    # R - liczba rund
+    # uzupelniamy zerami na poczatku
     W = [0] * (N * R)
+
     for i in range(N * R):
         if i < N:
+            # pierwsze N elementow z listy W jest kopia pierwszych N slow klucza K
             W[i] = K[i]
         elif i % N == 0:
+            # dla indeksu, ktory jest wielokrotnoscia N, generowany jest nowy klucz rundowy
+            # bierzemy poprzedni klucz, robimy przesuniecie wzgledem poprzedniego klucza
+            # wstawiamy operacje podstawienia i nakladamy operacje XOR
             W[i] = W[i - N] ^ podstawSlowo(przesun(W[i - 1])) ^ rund[i // N]
         else:
+            # przy reszcie dajemy XOR na wczesniejszych kluczach rundowych
             W[i] = W[i - N] ^ W[i - 1]
+
+    # W - lista wsyzstkich kluczy rundowych
     return W
 
-def sub_keys(W, key_length):
+
+def sub_keys(W, lenKlucz):
     # dzieli rozszerzony klucz na poszczegolne rundy
     subKeys = []
-    for i in range(rundyKluczy[key_length] + 1):
+    for i in range(rundyKluczy[lenKlucz] + 1):
         sub_key = 0
         for j in range(4):
             sub_key = (sub_key << 32) + W[i * 4 + j]
         subKeys.append(sub_key)
     return subKeys
 
-def sub_bytes(matrix):
-    # podstawia kazdy bajt przez wartosc z sbox
+def podstawSbox(macierz):
+    # podstawia kazdy bajt z macierzy przez wartosc z sbox
+    # z macierzy 4x4 kazdy element jest zamieniany na 4x4 z macierzy sbox
     for i in range(4):
         for j in range(4):
-            matrix[i][j] = sbox[matrix[i][j]]
+            macierz[i][j] = sbox[macierz[i][j]]
 
-def inv_sub_bytes(matrix):
-    # przywrocenie bajtow z odwr_sbox
+def odwrPodstawSbox(macierz):
+    # operacja odwrotna do podstawSbox
     for i in range(4):
         for j in range(4):
-            matrix[i][j] = odwr_sbox[matrix[i][j]]
+            macierz[i][j] = odwr_sbox[macierz[i][j]]
 
-def shift_rows(matrix):
+def przesunRzedy(macierz):
     # przesuwa wiersze macierzy
     for i in range(4):
-        matrix[i] = matrix[i][i:] + matrix[i][:i]
+        macierz[i] = macierz[i][i:] + macierz[i][:i]
 
-def inv_shift_rows(matrix):
+def odwrPrzesunRzedy(macierz):
     # przesuwa wiersze w odwrotnej kolejnosci
     for i in range(4):
-        matrix[i] = matrix[i][-i:] + matrix[i][:-i]
+        macierz[i] = macierz[i][-i:] + macierz[i][:-i]
 
 def xtime(a):
-    # mnozy przez x w ciele GF(2^8)
-    return (((a << 1) ^ 0x1b) & 0xff) if (a & 0x80) else (a << 1)
+    # mnozy przez x w ciele GF(2^8). Uzywana w mixColumns
+    # sprawdzenie czy najbardziej znaczacy bit jest ustawiony
+    if (a & 0x80):
+        # jesli tak, to przesuwamy w lewo i robimy xor
+        przesuniete = a << 1
+        wynik = przesuniete ^ 0x1b
+        # zwracamy wynk po redukcji (xor), ograniczamy do 8 bitow dzieki masce
+        return wynik & 0xff
+    else:
+        # jesli najstarszy bit nie jest ustawiony, przesuwamy bity liczby "a" w lewo o 1
+        return a << 1  # Zwracamy wynik przesunięcia w lewo
 
-def mix_columns(matrix):
+# nizej do zrobienia
+def mix_columns(macierz):
     # miesza kolumny macierzy
     for i in range(4):
-        t = matrix[0][i] ^ matrix[1][i] ^ matrix[2][i] ^ matrix[3][i]
-        u = matrix[0][i]
-        matrix[0][i] ^= t ^ xtime(matrix[0][i] ^ matrix[1][i])
-        matrix[1][i] ^= t ^ xtime(matrix[1][i] ^ matrix[2][i])
-        matrix[2][i] ^= t ^ xtime(matrix[2][i] ^ matrix[3][i])
-        matrix[3][i] ^= t ^ xtime(matrix[3][i] ^ u)
+        t = macierz[0][i] ^ macierz[1][i] ^ macierz[2][i] ^ macierz[3][i]
+        u = macierz[0][i]
+        macierz[0][i] ^= t ^ xtime(macierz[0][i] ^ macierz[1][i])
+        macierz[1][i] ^= t ^ xtime(macierz[1][i] ^ macierz[2][i])
+        macierz[2][i] ^= t ^ xtime(macierz[2][i] ^ macierz[3][i])
+        macierz[3][i] ^= t ^ xtime(macierz[3][i] ^ u)
 
-def inv_mix_columns(matrix):
+def inv_mix_columns(macierz):
     # odwrotne mieszanie kolumn
     for i in range(4):
-        u = xtime(xtime(matrix[0][i] ^ matrix[2][i]))
-        v = xtime(xtime(matrix[1][i] ^ matrix[3][i]))
-        matrix[0][i] ^= u
-        matrix[1][i] ^= v
-        matrix[2][i] ^= u
-        matrix[3][i] ^= v
-    mix_columns(matrix)
+        u = xtime(xtime(macierz[0][i] ^ macierz[2][i]))
+        v = xtime(xtime(macierz[1][i] ^ macierz[3][i]))
+        macierz[0][i] ^= u
+        macierz[1][i] ^= v
+        macierz[2][i] ^= u
+        macierz[3][i] ^= v
+    mix_columns(macierz)
 
-def add_round_key(matrix, round_key):
+def add_round_key(macierz, round_key):
     # laczy macierz z kluczem rundy
     key_bytes = []
     hex_str = f"{round_key:032x}"
@@ -191,40 +232,41 @@ def add_round_key(matrix, round_key):
         key_bytes.append(int(hex_str[i:i+2], 16))
     for i in range(4):
         for j in range(4):
-            matrix[i][j] ^= key_bytes[i * 4 + j]
+            macierz[i][j] ^= key_bytes[i * 4 + j]
 
-def encrypt_matrix(matrix, key, key_length):
+def encrypt_macierz(macierz, key, lenKlucz):
     # szyfrowanie macierzy (blok 16 bajtow)
-    W = key_expansion(key, key_length)
-    subKeys = sub_keys(W, key_length)
-    add_round_key(matrix, subKeys[0])
-    for i in range(1, rundyKluczy[key_length]):
-        sub_bytes(matrix)
-        shift_rows(matrix)
-        mix_columns(matrix)
-        add_round_key(matrix, subKeys[i])
-    sub_bytes(matrix)
-    shift_rows(matrix)
-    add_round_key(matrix, subKeys[rundyKluczy[key_length]])
-    return matrix
+    W = tworzenieKluczyRund(key, lenKlucz)
+    subKeys = sub_keys(W, lenKlucz)
+    add_round_key(macierz, subKeys[0])
+    for i in range(1, rundyKluczy[lenKlucz]):
+        podstawSbox(macierz)
+        przesunRzedy(macierz)
+        mix_columns(macierz)
+        add_round_key(macierz, subKeys[i])
+    podstawSbox(macierz)
+    przesunRzedy(macierz)
+    add_round_key(macierz, subKeys[rundyKluczy[lenKlucz]])
+    return macierz
 
-def decrypt_matrix(matrix, key, key_length):
+def decrypt_macierz(macierz, key, lenKlucz):
     # odszyfrowanie macierzy
-    W = key_expansion(key, key_length)
-    subKeys = sub_keys(W, key_length)
-    add_round_key(matrix, subKeys[rundyKluczy[key_length]])
-    inv_shift_rows(matrix)
-    inv_sub_bytes(matrix)
-    for i in range(rundyKluczy[key_length] - 1, 0, -1):
-        add_round_key(matrix, subKeys[i])
-        inv_mix_columns(matrix)
-        inv_shift_rows(matrix)
-        inv_sub_bytes(matrix)
-    add_round_key(matrix, subKeys[0])
-    return matrix
+    W = tworzenieKluczyRund(key, lenKlucz)
+    subKeys = sub_keys(W, lenKlucz)
+    add_round_key(macierz, subKeys[rundyKluczy[lenKlucz]])
+    odwrPrzesunRzedy(macierz)
+    odwrPodstawSbox(macierz)
+    for i in range(rundyKluczy[lenKlucz] - 1, 0, -1):
+        add_round_key(macierz, subKeys[i])
+        inv_mix_columns(macierz)
+        odwrPrzesunRzedy(macierz)
+        odwrPrzesunRzedy(macierz)
+        odwrPodstawSbox(macierz)
+    add_round_key(macierz, subKeys[0])
+    return macierz
 
-def text_to_matrix(text):
-    # Convert text to bytes using UTF-8 and build a 4x4 matrix (16-byte block).
+def text_to_macierz(text):
+    # Convert text to bytes using UTF-8 and build a 4x4 macierz (16-byte block).
     data = text.encode('utf-8')
     if len(data) < 16:
         data += b'\x00' * (16 - len(data))
@@ -232,14 +274,14 @@ def text_to_matrix(text):
         data = data[:16]
     return [list(data[i*4:(i+1)*4]) for i in range(4)]
 
-def matrix_to_text(matrix):
+def macierz_to_text(macierz):
     # laczy macierz do tekstu, ignorujac zera
     bytes_arr = []
-    for row in matrix:
+    for row in macierz:
         bytes_arr.extend(row)
     return ''.join(chr(b) for b in bytes_arr if b != 0)
 
-def encrypt_text(plaintext, key_text, key_length):
+def encrypt_text(plaintext, key_text, lenKlucz):
     key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
     encrypted_result = []
     # Work with the full plaintext as bytes and process it in 16-byte blocks.
@@ -248,22 +290,22 @@ def encrypt_text(plaintext, key_text, key_length):
         block = data[i:i+16]
         if len(block) < 16:
             block += b'\x00' * (16 - len(block))
-        # Create the 4x4 matrix from this block.
-        matrix = [list(block[j*4:(j+1)*4]) for j in range(4)]
-        encrypted_matrix = encrypt_matrix(matrix, key_int, key_length)
-        encrypted_block = ''.join(f"{val:02x}" for row in encrypted_matrix for val in row)
+        # Create the 4x4 macierz from this block.
+        macierz = [list(block[j*4:(j+1)*4]) for j in range(4)]
+        encrypted_macierz = encrypt_macierz(macierz, key_int, lenKlucz)
+        encrypted_block = ''.join(f"{val:02x}" for row in encrypted_macierz for val in row)
         encrypted_result.append(encrypted_block)
     return ''.join(encrypted_result)
 
-def decrypt_text(ciphertext, key_text, key_length):
+def decrypt_text(ciphertext, key_text, lenKlucz):
     key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
     decrypted_bytes = bytearray()
     # Each block is 16 bytes (represented by 32 hex characters)
     for i in range(0, len(ciphertext), 32):
         block_hex = ciphertext[i:i+32]
         block = bytes(int(block_hex[j:j+2], 16) for j in range(0, 32, 2))
-        # Build the 4x4 matrix from this block.
-        matrix = [list(block[j*4:(j+1)*4]) for j in range(4)]
-        decrypted_matrix = decrypt_matrix(matrix, key_int, key_length)
-        decrypted_bytes.extend(bytes(val for row in decrypted_matrix for val in row))
+        # Build the 4x4 macierz from this block.
+        macierz = [list(block[j*4:(j+1)*4]) for j in range(4)]
+        decrypted_macierz = decrypt_macierz(macierz, key_int, lenKlucz)
+        decrypted_bytes.extend(bytes(val for row in decrypted_macierz for val in row))
     return decrypted_bytes.rstrip(b'\x00').decode('utf-8', errors='ignore')
