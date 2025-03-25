@@ -156,15 +156,23 @@ def tworzenieKluczyRund(key, lenKlucz):
     return W
 
 
-def sub_keys(W, lenKlucz):
-    # dzieli rozszerzony klucz na poszczegolne rundy
-    subKeys = []
+def podzielKlucz(W, lenKlucz):
+    # funkcja dzieli klucz rozszerzeony (liste 32-bit slow) na kilka kluczy rundowych
+    # kazdy klucz rund sklada sie z 128 bitow (4 * 32 bity)
+    # kazdy klucz rund jest wykorzystywany w AddRoundKey
+    # lenKlucz to np. 128, 256, zaleznie od wybranego klucza
+    kluczeRundowe = []
+    # iloscRund = 10 lub 12 lub 14 (128bit:10)
+    iloscRund = rundyKluczy[lenKlucz] + 1
+    # iterujemy przez wszystkie rundy
     for i in range(rundyKluczy[lenKlucz] + 1):
-        sub_key = 0
+        klucz = 0
+        # polacz 4 nastepne 32-bit slowa aby dostac 128bit klucz rundowy
         for j in range(4):
-            sub_key = (sub_key << 32) + W[i * 4 + j]
-        subKeys.append(sub_key)
-    return subKeys
+            klucz = (klucz << 32) + W[i * 4 + j]
+        kluczeRundowe.append(klucz)
+    return kluczeRundowe
+
 
 def podstawSbox(macierz):
     # podstawia kazdy bajt z macierzy przez wartosc z sbox
@@ -203,17 +211,23 @@ def xtime(a):
         return a << 1  # Zwracamy wynik przesunięcia w lewo
 
 # nizej do zrobienia
-def mix_columns(macierz):
-    # miesza kolumny macierzy
+def pomieszajKol(macierz):
+    # operacja "MixColumns"
+    # dla kazdej kolumny (jest ich 4)
     for i in range(4):
+        # t - suma XOR wszystkich elementow kolumny i
         t = macierz[0][i] ^ macierz[1][i] ^ macierz[2][i] ^ macierz[3][i]
+        # u - przechowuje oryginalna wartosc pierwszego elementu kolumny
         u = macierz[0][i]
+        # dalej aktualizujemy nastepne czesci kolumny
+        # kazdy bajt jest xor'orwany z wartoscia t i xor'owany z wynikiem funkcji xtime sasiadujacych elementow
         macierz[0][i] ^= t ^ xtime(macierz[0][i] ^ macierz[1][i])
         macierz[1][i] ^= t ^ xtime(macierz[1][i] ^ macierz[2][i])
         macierz[2][i] ^= t ^ xtime(macierz[2][i] ^ macierz[3][i])
         macierz[3][i] ^= t ^ xtime(macierz[3][i] ^ u)
 
-def inv_mix_columns(macierz):
+
+def odwrPomieszajKol(macierz):
     # odwrotne mieszanie kolumn
     for i in range(4):
         u = xtime(xtime(macierz[0][i] ^ macierz[2][i]))
@@ -222,7 +236,7 @@ def inv_mix_columns(macierz):
         macierz[1][i] ^= v
         macierz[2][i] ^= u
         macierz[3][i] ^= v
-    mix_columns(macierz)
+    pomieszajKol(macierz)
 
 def add_round_key(macierz, round_key):
     # laczy macierz z kluczem rundy
@@ -234,31 +248,31 @@ def add_round_key(macierz, round_key):
         for j in range(4):
             macierz[i][j] ^= key_bytes[i * 4 + j]
 
-def encrypt_macierz(macierz, key, lenKlucz):
+def zaszyfrujMacierz(macierz, key, lenKlucz):
     # szyfrowanie macierzy (blok 16 bajtow)
     W = tworzenieKluczyRund(key, lenKlucz)
-    subKeys = sub_keys(W, lenKlucz)
+    subKeys = podzielKlucz(W, lenKlucz)
     add_round_key(macierz, subKeys[0])
     for i in range(1, rundyKluczy[lenKlucz]):
         podstawSbox(macierz)
         przesunRzedy(macierz)
-        mix_columns(macierz)
+        pomieszajKol(macierz)
         add_round_key(macierz, subKeys[i])
     podstawSbox(macierz)
     przesunRzedy(macierz)
     add_round_key(macierz, subKeys[rundyKluczy[lenKlucz]])
     return macierz
 
-def decrypt_macierz(macierz, key, lenKlucz):
+def odszyfrujMacierz(macierz, key, lenKlucz):
     # odszyfrowanie macierzy
     W = tworzenieKluczyRund(key, lenKlucz)
-    subKeys = sub_keys(W, lenKlucz)
+    subKeys = podzielKlucz(W, lenKlucz)
     add_round_key(macierz, subKeys[rundyKluczy[lenKlucz]])
     odwrPrzesunRzedy(macierz)
     odwrPodstawSbox(macierz)
     for i in range(rundyKluczy[lenKlucz] - 1, 0, -1):
         add_round_key(macierz, subKeys[i])
-        inv_mix_columns(macierz)
+        odwrPomieszajKol(macierz)
         odwrPrzesunRzedy(macierz)
         odwrPrzesunRzedy(macierz)
         odwrPodstawSbox(macierz)
@@ -292,7 +306,7 @@ def encrypt_text(plaintext, key_text, lenKlucz):
             block += b'\x00' * (16 - len(block))
         # Create the 4x4 macierz from this block.
         macierz = [list(block[j*4:(j+1)*4]) for j in range(4)]
-        encrypted_macierz = encrypt_macierz(macierz, key_int, lenKlucz)
+        encrypted_macierz = zaszyfrujMacierz(macierz, key_int, lenKlucz)
         encrypted_block = ''.join(f"{val:02x}" for row in encrypted_macierz for val in row)
         encrypted_result.append(encrypted_block)
     return ''.join(encrypted_result)
@@ -306,6 +320,6 @@ def decrypt_text(ciphertext, key_text, lenKlucz):
         block = bytes(int(block_hex[j:j+2], 16) for j in range(0, 32, 2))
         # Build the 4x4 macierz from this block.
         macierz = [list(block[j*4:(j+1)*4]) for j in range(4)]
-        decrypted_macierz = decrypt_macierz(macierz, key_int, lenKlucz)
+        decrypted_macierz = odszyfrujMacierz(macierz, key_int, lenKlucz)
         decrypted_bytes.extend(bytes(val for row in decrypted_macierz for val in row))
     return decrypted_bytes.rstrip(b'\x00').decode('utf-8', errors='ignore')
