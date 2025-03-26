@@ -10,7 +10,7 @@ from CTkMessagebox import CTkMessagebox
 
 from crypto.Random import get_random_bytes
 
-from AES import encrypt_text, decrypt_text
+from AES import zakodujTekst, odszyfrujTekst
 
 def ustawOkno():
     tytul = "Zaszyfruj i odszyfruj AES"
@@ -114,7 +114,7 @@ def szyfruj():
     # jezeli pole do szyfrowania zawiera tekst, szyfruj go
     tekst_jawny = kodowanie.get("0.0", ct.END).strip()
     if tekst_jawny:
-        zaszyfrowany = encrypt_text(tekst_jawny, kluczTekstowy, kluczBitowy)
+        zaszyfrowany = zakodujTekst(tekst_jawny, kluczTekstowy, kluczBitowy)
         odszyfrowanie.delete("0.0", tk.END)
         odszyfrowanie.insert("0.0", zaszyfrowany)
         CTkMessagebox(title="Udało się!!", message="Tekst został pomyślnie zaszyfrowany!", icon="check", icon_size=(61,61))
@@ -133,8 +133,8 @@ def odszyfruj():
         CTkMessagebox(title="Wystąpił błąd", message="Brak danych do odszyfrowania", icon="warning", icon_size=(61, 61))
         return
 
-    # Odszyfruj tekst przy użyciu funkcji decrypt_text z modułu AES
-    jawny = decrypt_text(zaszyfrowany, kluczTekstowy, kluczBitowy)
+    # Odszyfruj tekst przy użyciu funkcji odszyfrujTekst z modułu AES
+    jawny = odszyfrujTekst(zaszyfrowany, kluczTekstowy, kluczBitowy)
 
     # Wyczyść górne pole (kodowanie) i wstaw odszyfrowany tekst
     kodowanie.delete("0.0", tk.END)

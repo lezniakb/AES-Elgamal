@@ -210,7 +210,6 @@ def xtime(a):
         # jesli najstarszy bit nie jest ustawiony, przesuwamy bity liczby "a" w lewo o 1
         return a << 1  # Zwracamy wynik przesunięcia w lewo
 
-# nizej do zrobienia
 def pomieszajKol(macierz):
     # operacja "MixColumns"
     # dla kazdej kolumny (jest ich 4)
@@ -351,31 +350,91 @@ def macierzNaTekst(macierz):
     return tekst
 
 
-def encrypt_text(plaintext, key_text, lenKlucz):
-    key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
-    encrypted_result = []
-    # Work with the full plaintext as bytes and process it in 16-byte blocks.
-    data = plaintext.encode('utf-8')
-    for i in range(0, len(data), 16):
-        block = data[i:i+16]
-        if len(block) < 16:
-            block += b'\x00' * (16 - len(block))
-        # Create the 4x4 macierz from this block.
-        macierz = [list(block[j*4:(j+1)*4]) for j in range(4)]
-        encrypted_macierz = zaszyfrujMacierz(macierz, key_int, lenKlucz)
-        encrypted_block = ''.join(f"{val:02x}" for row in encrypted_macierz for val in row)
-        encrypted_result.append(encrypted_block)
-    return ''.join(encrypted_result)
+def zakodujTekst(text, tekstKlucza, lenKlucz):
+    # zakoduj tekst klucza do bajtow i zamien na int
+    bajtyKlucza = tekstKlucza.encode("utf-8")
+    intKlucz = int.from_bytes(bajtyKlucza, "big")
 
-def decrypt_text(ciphertext, key_text, lenKlucz):
-    key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
-    decrypted_bytes = bytearray()
-    # Each block is 16 bytes (represented by 32 hex characters)
-    for i in range(0, len(ciphertext), 32):
-        block_hex = ciphertext[i:i+32]
-        block = bytes(int(block_hex[j:j+2], 16) for j in range(0, 32, 2))
-        # Build the 4x4 macierz from this block.
-        macierz = [list(block[j*4:(j+1)*4]) for j in range(4)]
-        decrypted_macierz = odszyfrujMacierz(macierz, key_int, lenKlucz)
-        decrypted_bytes.extend(bytes(val for row in decrypted_macierz for val in row))
-    return decrypted_bytes.rstrip(b'\x00').decode('utf-8', errors='ignore')
+    zakodowaneBloki = []
+    # zakoduj tekst na bajty
+    data = text.encode("utf-8")
+
+    # przetwarzanie danych - bloki co 16 bajtow
+    for i in range(0, len(data), 16):
+        # wez blok danych
+        blok = data[i:i + 16]
+
+        # jesli blok ma mniej niz 16 bajtow to dopelnij go zerami
+        if len(blok) < 16:
+            dlugoscDopelnienia = 16 - len(blok)
+            # zamien blok na (blok + dodane zera)
+            blok = blok + b'\x00' * dlugoscDopelnienia
+
+        # tworzenie macierzy 4x4 z bloku
+        macierz = []
+        for j in range(4):
+            # znajdz indeksy poczatku i konca rzedu i taki blok zapisz jako "rzad",
+            # bajty sa zapisane jako oddzielne elementy listy
+            startRzedu = j * 4
+            koniecRzedu = startRzedu + 4
+            rzad = list(blok[startRzedu:koniecRzedu])
+            macierz.append(rzad)
+
+        zaszyfrowanaMacierz = zaszyfrujMacierz(macierz, intKlucz, lenKlucz)
+
+        # konwersja zaszyfrowanej macierzy na ciag szesnastkowy
+        zaszyfrowanyBlok = ""
+        for rzad in zaszyfrowanaMacierz:
+            for wartosc in rzad:
+                # kazda wartosc w kazdym rzedzie macierzy jest konwertowana na ciag dwucyfrowy w hex
+                zaszyfrowanyBlok += f"{wartosc:02x}"
+
+        # dodajemy zaszyfrowany blok do wyniku
+        zakodowaneBloki.append(zaszyfrowanyBlok)
+
+    # polacz wszystkie zakodowane bloki w jeden ciag
+    ciag = ''.join(zakodowaneBloki)
+    return ciag
+
+
+def odszyfrujTekst(zaszyfrowanyTekst, key_text, lenKlucz):
+    # zapisz tekst klucza do bajtow a potem zamien na int
+    bajtyKlucza = key_text.encode("utf-8")
+    intKlucz = int.from_bytes(bajtyKlucza, "big")
+
+    # utworzenie pustego zbioru bajtow na odszyfrowany tekst
+    odszyfrowaneBajty = bytearray()
+
+    # przetwarzanie zaszyfrowanego tekstu w blokach po 32 znaki
+    # kazdy blok to 16 bajtow wiec zgadza sie z zaszyfrujTekst()
+    for i in range(0, len(zaszyfrowanyTekst), 32):
+        # zapisz nastepny blok w postaci szesnastkowej
+        blokHex = zaszyfrowanyTekst[i:i + 32]
+
+        # przekonwertuj kazdy blok szensastkowy na bajty
+        blok = bytearray()
+        for j in range(0, 32, 2):
+            bajtHex = blokHex[j:j + 2]
+            bajtInt = int(bajtHex, 16)
+            blok.append(bajtInt)
+
+        # tworzenie macierzy 4x4
+        macierz = []
+        for m in range(4):
+            startRzedu = m * 4
+            koniecRzedu = startRzedu + 4
+            rzad = list(blok[startRzedu:koniecRzedu])
+            macierz.append(rzad)
+
+        odszyfrowanaMacierz = odszyfrujMacierz(macierz, intKlucz, lenKlucz)
+
+        # konwertuj odszyfrowana macierz na bajty i zapisz w liscie odszyfrowanych bajtow
+        for rzad in odszyfrowanaMacierz:
+            for wartosc in rzad:
+                odszyfrowaneBajty.append(wartosc)
+
+    # usuniecie bajtow zer (ktore byly dopelnieniem)
+    bajtyOczyszczone = odszyfrowaneBajty.rstrip(b'\x00')
+    tekst = bajtyOczyszczone.decode("utf-8", errors="ignore")
+    return tekst
+
