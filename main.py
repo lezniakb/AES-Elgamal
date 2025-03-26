@@ -75,17 +75,42 @@ def oknoTekstowe(root, width=100, height=100, palette=None, **kwargs):
 
     return okno
 
-
-def wykonaj():
-    # funkcja wykonujaca szyfrowanie lub odszyfrowanie
+def sprawdzKlucz():
     kluczTekstowy = klucz.get().strip()
 
     # jesli nic nie podano w polu z kluczem to wyrzuc blad
     if not kluczTekstowy:
-        CTkMessagebox(title="Wystąpił błąd!!", message="Podaj klucz.", icon="warning", icon_size=(61,61))
-        return
+        CTkMessagebox(title="Wystąpił błąd!!", message="Podaj klucz", icon="warning", icon_size=(61,61))
+        return None
+
+    if wyborKluczaTxt.get().strip() not in ("128 bit", "192 bit", "256 bit"):
+        CTkMessagebox(title="Wystąpił błąd!!", message="Wybierz odpowiedni rozmiar klucza", icon="warning", icon_size=(61,61))
+        return None
 
     kluczBitowy = int(wyborKluczaTxt.get().split()[0])
+
+    if kluczBitowy == 128:
+        spodziewanaDlugosc = 32
+    elif kluczBitowy == 192:
+        spodziewanaDlugosc = 48
+    else:
+        spodziewanaDlugosc = 64
+
+    if len(kluczTekstowy) != spodziewanaDlugosc:
+        CTkMessagebox(title="Wystąpił błąd!!",
+                      message=f"Podany klucz musi mieć {spodziewanaDlugosc} znaków (dla klucza {kluczBitowy} bit)",
+                      icon="warning", icon_size=(61, 61))
+        return None
+    return kluczTekstowy, kluczBitowy
+
+def szyfruj():
+    # funkcja wykonujaca szyfrowanie lub odszyfrowanie
+
+    sprawdzenie = sprawdzKlucz()
+    if sprawdzenie == None:
+        return
+    else:
+        kluczTekstowy, kluczBitowy = sprawdzenie
     # jezeli pole do szyfrowania zawiera tekst, szyfruj go
     tekst_jawny = kodowanie.get("0.0", ct.END).strip()
     if tekst_jawny:
@@ -95,24 +120,21 @@ def wykonaj():
         CTkMessagebox(title="Udało się!!", message="Tekst został pomyślnie zaszyfrowany!", icon="check", icon_size=(61,61))
 
 
-def decipher():
-    # Pobierz klucz z pola wejściowego
-    kluczTekstowy = klucz.get().strip()
-    if not kluczTekstowy:
-        CTkMessagebox(title="Wystąpił błąd", message="Podaj klucz.", icon="warning", icon_size=(61, 61))
+def odszyfruj():
+
+    sprawdzenie = sprawdzKlucz()
+    if sprawdzenie == None:
         return
-
-    # Pobierz długość klucza (np. "128 bit") i wyciągnij wartość liczbową
-    key_bits = int(wyborKluczaTxt.get().split()[0])
-
+    else:
+        kluczTekstowy, kluczBitowy = sprawdzenie
     # Pobierz zaszyfrowany tekst z dolnego pola (odszyfrowanie)
     zaszyfrowany = odszyfrowanie.get("0.0", ct.END).strip()
     if not zaszyfrowany:
-        CTkMessagebox(title="Wystąpił błąd", message="Brak danych do odszyfrowania.", icon="warning", icon_size=(61, 61))
+        CTkMessagebox(title="Wystąpił błąd", message="Brak danych do odszyfrowania", icon="warning", icon_size=(61, 61))
         return
 
     # Odszyfruj tekst przy użyciu funkcji decrypt_text z modułu AES
-    jawny = decrypt_text(zaszyfrowany, kluczTekstowy, key_bits)
+    jawny = decrypt_text(zaszyfrowany, kluczTekstowy, kluczBitowy)
 
     # Wyczyść górne pole (kodowanie) i wstaw odszyfrowany tekst
     kodowanie.delete("0.0", tk.END)
@@ -247,8 +269,8 @@ srodek.pack(padx=10, pady=10, fill="both", expand=False)
 kodowaniePlik = ct.CTkButton(srodek, text="Wczytaj plik", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//15), command=wybierzPlik)
 
 # szyfruj i odszyfruj (przycisk)
-szyfruj = ct.CTkButton(srodek, text="Zaszyfruj \u2193", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=wykonaj)
-odszyfruj = ct.CTkButton(srodek, text="Odszyfruj \u2191", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=decipher)
+szyfruj = ct.CTkButton(srodek, text="Zaszyfruj \u2193", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=szyfruj)
+odszyfruj = ct.CTkButton(srodek, text="Odszyfruj \u2191", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=odszyfruj)
 
 # wybor klucza
 wyborKluczaTxt = ct.StringVar(value="Rozmiar klucza")
@@ -316,5 +338,3 @@ d) AddRoundKey
     
 Ostatnia runda nie robi mix columns.
 """
-
-# DODAC: zabezpieczenie ze klucz nie moze byc dowolny!!

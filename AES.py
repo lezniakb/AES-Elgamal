@@ -238,62 +238,118 @@ def odwrPomieszajKol(macierz):
         macierz[3][i] ^= v
     pomieszajKol(macierz)
 
-def add_round_key(macierz, round_key):
-    # laczy macierz z kluczem rundy
-    key_bytes = []
-    hex_str = f"{round_key:032x}"
+
+def dodajKluczRundy(macierz, kluczRundy):
+    # zamien kluczRundy na 32-znakowy ciag hex
+    kluczHex = f"{kluczRundy:032x}"
+    bajtyKlucza = []
+
+    # dla kazdego bajtu (dwoch znakow hex odpowiadajacych jednemu bajtowi)
     for i in range(0, 32, 2):
-        key_bytes.append(int(hex_str[i:i+2], 16))
+        # wez dwa nastepne znaki z ciagu hex
+        bajtHex = kluczHex[i:i + 2]
+        # zamien ciag hex na bajt
+        bajtInt = int(bajtHex, 16)
+        bajtyKlucza.append(bajtInt)
+
+    # tutaj powinnismy miec 16 bajtow klucza
+    # wykonujemy operacje XOR miedzy kazdym bajtem macierzy a odpowiadającym mu bajtem klucza
     for i in range(4):
         for j in range(4):
-            macierz[i][j] ^= key_bytes[i * 4 + j]
+            # oblicz indeks bajtu zaleznie od pozycji w macierzy
+            index = i * 4 + j
+            # zrob xor miedzy bajtem z macierzy a bajtem klucza
+            macierz[i][j] ^= bajtyKlucza[index]
+
 
 def zaszyfrujMacierz(macierz, key, lenKlucz):
     # szyfrowanie macierzy (blok 16 bajtow)
+
+    # utworz klucz rund i podziel go na podklucze
     W = tworzenieKluczyRund(key, lenKlucz)
-    subKeys = podzielKlucz(W, lenKlucz)
-    add_round_key(macierz, subKeys[0])
+    podzieloneKlucze = podzielKlucz(W, lenKlucz)
+
+    # pierwsze dodanie klucza rundowego do maceirzy (uzywa xor)
+    dodajKluczRundy(macierz, podzieloneKlucze[0])
+
+    # zaleznosci od dlugosci klucza mamy tyle rund (przejsc)
     for i in range(1, rundyKluczy[lenKlucz]):
+        # podstawSbox (SubBytes): kazdy bajt macierzy jest zastepowany wartoscia z Sboxa
         podstawSbox(macierz)
+        # przesunRzedy (ShiftRows): rzedy macierzy sa cyklicznie przesuwane o okreslona liczbe pozycji
         przesunRzedy(macierz)
+        # pomieszajKol (MixColumns): kolumny macierzy sa mieszane operacjami xor wewnatrz funckji
         pomieszajKol(macierz)
-        add_round_key(macierz, subKeys[i])
+        # dodajKluczRundy (AddRoundKey): dodanie klucza rundowego (krok "0" wykonywany takze przed ta petla)
+        dodajKluczRundy(macierz, podzieloneKlucze[i])
+
+    # ostatnia runda szyfrowania gdzie pomijamy pomieszajKol i finalnie dodajemy klucz rundowy
     podstawSbox(macierz)
     przesunRzedy(macierz)
-    add_round_key(macierz, subKeys[rundyKluczy[lenKlucz]])
+    dodajKluczRundy(macierz, podzieloneKlucze[rundyKluczy[lenKlucz]])
     return macierz
 
 def odszyfrujMacierz(macierz, key, lenKlucz):
-    # odszyfrowanie macierzy
+    # odszyfrowanie macierzy, odwrotna zasada dzialania 'zaszyfrujMacierz'
     W = tworzenieKluczyRund(key, lenKlucz)
-    subKeys = podzielKlucz(W, lenKlucz)
-    add_round_key(macierz, subKeys[rundyKluczy[lenKlucz]])
+    podzieloneKlucze = podzielKlucz(W, lenKlucz)
+    dodajKluczRundy(macierz, podzieloneKlucze[rundyKluczy[lenKlucz]])
     odwrPrzesunRzedy(macierz)
     odwrPodstawSbox(macierz)
     for i in range(rundyKluczy[lenKlucz] - 1, 0, -1):
-        add_round_key(macierz, subKeys[i])
+        dodajKluczRundy(macierz, podzieloneKlucze[i])
         odwrPomieszajKol(macierz)
         odwrPrzesunRzedy(macierz)
-        odwrPrzesunRzedy(macierz)
         odwrPodstawSbox(macierz)
-    add_round_key(macierz, subKeys[0])
+    dodajKluczRundy(macierz, podzieloneKlucze[0])
     return macierz
 
-def text_to_macierz(text):
-    # Convert text to bytes using UTF-8 and build a 4x4 macierz (16-byte block).
+
+def tekstNaMacierz(text):
     data = text.encode('utf-8')
+    # sprawdzenie czy macierz na pewno ma 16 bajtow. jesli nie to wypelnia zerami lub skraca do 16 bajtow.
     if len(data) < 16:
+        # dodaj zero(bajtowe) tyle razy, ile brakuje nam danych do liczby 16
         data += b'\x00' * (16 - len(data))
     else:
+        # lub skroc do 16 bajtow
         data = data[:16]
-    return [list(data[i*4:(i+1)*4]) for i in range(4)]
 
-def macierz_to_text(macierz):
-    # laczy macierz do tekstu, ignorujac zera
-    bytes_arr = []
-    for row in macierz:
-        bytes_arr.extend(row)
-    return ''.join(chr(b) for b in bytes_arr if b != 0)
+    matrix = []
+    for i in range(4):
+        # bierzemy kolejne 4 indeksy (i tak po 4 co kazde przejscie)
+        poczIndeks = i * 4
+        koncIndeks = poczIndeks + 4
+
+        # wez jeden rzad bajtow (jedna linijke/wiersz)
+        wiersz = data[poczIndeks:koncIndeks]
+
+        # zamien fragment (caly wiersz bajtow) na liste osobnych bajtow
+        wiersz = list(wiersz)
+        # dodaj je do macierzy
+        matrix.append(wiersz)
+    # zwroc macierz 4x4
+    return matrix
+
+
+def macierzNaTekst(macierz):
+    # dla kazdego bajtu w kazdym rzedzie macierzy, dodaj go do listy bajtow
+    listaBajtow = []
+    for rzad in macierz:
+        for bajt in rzad:
+            listaBajtow.append(bajt)
+
+    # zamiana listy bajtow na liste znakow
+    znaki = []
+    for bajt in listaBajtow:
+        if bajt != 0:
+            # jesli bajt nie jest rowny 0, to zamien go na znak. jesli jest rowny 0 to omin
+            znak = chr(bajt)
+            znaki.append(znak)
+
+    tekst = ''.join(znaki)
+    return tekst
+
 
 def encrypt_text(plaintext, key_text, lenKlucz):
     key_int = int.from_bytes(key_text.encode('utf-8'), 'big')
