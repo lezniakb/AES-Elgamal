@@ -7,5 +7,11 @@ Korzystanie z biblioteki BigInteger lub podobnej przy realizacji zadań jest doz
 Nie jest dozwolone korzystanie z funkcji w stylu szyfrowanieAES()/deszyfrowanieAES() implementujących cały algorytm szyfrowania/deszyfrowania lub podpisu/weryfikacji.
 
 ## Do zrobienia
-1. Sprawdzić działanie programu na innej maszynie - zweryfikować rozmiar GUI, działanie szyfrowania i deszyfrowania.
-2. Utworzyć program .exe, który będzie zawierać wszystkie wymagane biblioteki. Skrypt w formie .py nie zadziała na maszynie, która nie posiada wymaganych dodatkowych bibliotek.
+- [x] Sprawdzić działanie programu na innej maszynie - zweryfikować rozmiar GUI, działanie szyfrowania i deszyfrowania.
+- [ ] Utworzyć program .exe, który będzie zawierać wszystkie wymagane biblioteki. Skrypt w formie .py nie zadziała na maszynie, która nie posiada wymaganych dodatkowych bibliotek.
+
+## Funckjonalność
+- [x] 1. Utworzenie interfejsu użytkownika z oknami tekstowymi, przyciskami
+- [x] 2. Implementacja szyfru AES - szyfrowanie, odszyfrowanie, generowanie i użycie sekretnego klucza
+- [x] 3. Odczyt i zapis do pliku zaszyfrowanych danych
+- [ ] 4. Implementacja szyfru Elgamal - realizacja podpisów cyfrowych
