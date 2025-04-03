@@ -1,6 +1,7 @@
-Zestaw VI
+# Zestaw VI - AES i ElGamala (podpis cyfrowy)
 1. Napisać program szyfrujący/deszyfrujący dane wprowadzone przez użytkownika lub z pliku wykorzystując algorytm AES.
 2. Napisać program tworzący podpis cyfrowy (weryfikujący podpis cyfrowy) danych wprowadzonych przez użytkownika lub z pliku przy użyciu algorytmu ElGamala.
 
+## Dodatkowe informacje
 Korzystanie z biblioteki BigInteger lub podobnej przy realizacji zadań jest dozwolone. 
 Nie jest dozwolone korzystanie z funkcji w stylu szyfrowanieAES()/deszyfrowanieAES() implementujących cały algorytm szyfrowania/deszyfrowania lub podpisu/weryfikacji.
