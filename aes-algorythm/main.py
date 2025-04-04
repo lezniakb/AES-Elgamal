@@ -9,7 +9,8 @@ from tkinter import filedialog
 from CTkMessagebox import CTkMessagebox
 
 from crypto.Random import get_random_bytes
-
+from random import choice
+import string
 from AES import zakodujTekst, odszyfrujTekst
 
 def ustawOkno():
@@ -87,30 +88,32 @@ def sprawdzKlucz():
         CTkMessagebox(title="Wystąpił błąd!!", message="Wybierz odpowiedni rozmiar klucza", icon="warning", icon_size=(61,61))
         return None
 
-    bitow = int(wyborKluczaTxt.get().split()[0])
+    bitow = wyborKluczaTxt.get()
+    bitow = bitow.split()[0]
+    bitow = int(bitow)
 
     if bitow == 128:
-        spodziewanaDlugosc = 32
+        spodziewanaDlugosc = 16
     elif bitow == 192:
-        spodziewanaDlugosc = 48
+        spodziewanaDlugosc = 24
     else:
-        spodziewanaDlugosc = 64
+        spodziewanaDlugosc = 32
 
     if len(kluczTekstowy) != spodziewanaDlugosc:
         CTkMessagebox(title="Wystąpił błąd!!",
-                      message=f"Podany klucz musi mieć {spodziewanaDlugosc} znaków (dla klucza {kluczBitowy} bit)",
+                      message=f"Podany klucz musi mieć {spodziewanaDlugosc} znaków (dla klucza {bitow} bit)",
                       icon="warning", icon_size=(61, 61))
         return None
     return kluczTekstowy, bitow
 
 def szyfruj():
     # funkcja wykonujaca szyfrowanie lub odszyfrowanie
-
     sprawdzenie = sprawdzKlucz()
     if sprawdzenie == None:
         return
     else:
         kluczTekstowy, bitow = sprawdzenie
+    kluczTekstowy = kluczTekstowy.encode("ascii").hex()
     # jezeli pole do szyfrowania zawiera tekst, szyfruj go
     tekst_jawny = kodowanie.get("0.0", ct.END).strip()
     if tekst_jawny:
@@ -121,29 +124,25 @@ def szyfruj():
 
 
 def odszyfruj():
-
     sprawdzenie = sprawdzKlucz()
     if sprawdzenie == None:
         return
     else:
         kluczTekstowy, bitow = sprawdzenie
-    # Pobierz zaszyfrowany tekst z dolnego pola (odszyfrowanie)
+    kluczTekstowy = kluczTekstowy.encode("ascii").hex()
     zaszyfrowany = odszyfrowanie.get("0.0", ct.END).strip()
     if not zaszyfrowany:
         CTkMessagebox(title="Wystąpił błąd", message="Brak danych do odszyfrowania", icon="warning", icon_size=(61, 61))
         return
 
-    # Odszyfruj tekst przy użyciu funkcji odszyfrujTekst z modułu AES
     jawny = odszyfrujTekst(zaszyfrowany, kluczTekstowy, bitow)
 
-    # Wyczyść górne pole (kodowanie) i wstaw odszyfrowany tekst
     kodowanie.delete("0.0", tk.END)
     kodowanie.insert("0.0", jawny)
 
     CTkMessagebox(title="Sukces", message="Tekst został odszyfrowany!", icon="check", icon_size=(61, 61))
 
 def zapiszPlik():
-    # Open a file-save dialog to choose where to save the ciphered text
     sciezka_pliku = filedialog.asksaveasfilename(
         title="Zapisz zaszyfrowany tekst",
         defaultextension=".txt",
@@ -152,7 +151,6 @@ def zapiszPlik():
     if not sciezka_pliku:
         CTkMessagebox(title="Uwaga", message="Nie wybrano miejsca do zapisu", icon="warning", icon_size=(61,61))
         return
-    # Retrieve the ciphered text from the output textbox
     tekst = odszyfrowanie.get("0.0", tk.END).strip()
     try:
         with open(sciezka_pliku, "w", encoding="utf-8") as plik:
@@ -168,9 +166,10 @@ def generujKlucz():
     if rozmiar_klucza not in rozmiar_map:
         CTkMessagebox(title="Wystąpił błąd!!", message="Proszę wybrać poprawny klucz (np. 256 bit)", icon="warning", icon_size=(61,61))
         return
-    # wez bajty ze slownika rozmiaru
-    bajty = get_random_bytes(rozmiar_map[rozmiar_klucza])
-    kluczTekstowy = bajty.hex()
+    kluczTekstowy = ""
+    for i in range(rozmiar_map[rozmiar_klucza]):
+        litera = choice(string.ascii_letters + string.digits)
+        kluczTekstowy += litera
     klucz.delete(0, ct.END)
     klucz.insert(0, kluczTekstowy)
     CTkMessagebox(title="Udało się", message="Wygenerowano klucz", icon="info", icon_size=(61,61))
@@ -191,7 +190,6 @@ def wczytajKlucz():
     CTkMessagebox(title="Udało się!", message="Klucz został wczytany pomyślnie!", icon="check", icon_size=(61,61))
 
 def wczytajZaszyfrowany():
-    # Open a file dialog to select the file containing the ciphered text.
     sciezka_pliku = filedialog.askopenfilename(
         title="Wybierz plik zaszyfrowanego tekstu",
         filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
