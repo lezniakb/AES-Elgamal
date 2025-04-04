@@ -87,11 +87,11 @@ def sprawdzKlucz():
         CTkMessagebox(title="Wystąpił błąd!!", message="Wybierz odpowiedni rozmiar klucza", icon="warning", icon_size=(61,61))
         return None
 
-    kluczBitowy = int(wyborKluczaTxt.get().split()[0])
+    bitow = int(wyborKluczaTxt.get().split()[0])
 
-    if kluczBitowy == 128:
+    if bitow == 128:
         spodziewanaDlugosc = 32
-    elif kluczBitowy == 192:
+    elif bitow == 192:
         spodziewanaDlugosc = 48
     else:
         spodziewanaDlugosc = 64
@@ -101,7 +101,7 @@ def sprawdzKlucz():
                       message=f"Podany klucz musi mieć {spodziewanaDlugosc} znaków (dla klucza {kluczBitowy} bit)",
                       icon="warning", icon_size=(61, 61))
         return None
-    return kluczTekstowy, kluczBitowy
+    return kluczTekstowy, bitow
 
 def szyfruj():
     # funkcja wykonujaca szyfrowanie lub odszyfrowanie
@@ -110,11 +110,11 @@ def szyfruj():
     if sprawdzenie == None:
         return
     else:
-        kluczTekstowy, kluczBitowy = sprawdzenie
+        kluczTekstowy, bitow = sprawdzenie
     # jezeli pole do szyfrowania zawiera tekst, szyfruj go
     tekst_jawny = kodowanie.get("0.0", ct.END).strip()
     if tekst_jawny:
-        zaszyfrowany = zakodujTekst(tekst_jawny, kluczTekstowy, kluczBitowy)
+        zaszyfrowany = zakodujTekst(tekst_jawny, kluczTekstowy, bitow)
         odszyfrowanie.delete("0.0", tk.END)
         odszyfrowanie.insert("0.0", zaszyfrowany)
         CTkMessagebox(title="Udało się!!", message="Tekst został pomyślnie zaszyfrowany!", icon="check", icon_size=(61,61))
@@ -126,7 +126,7 @@ def odszyfruj():
     if sprawdzenie == None:
         return
     else:
-        kluczTekstowy, kluczBitowy = sprawdzenie
+        kluczTekstowy, bitow = sprawdzenie
     # Pobierz zaszyfrowany tekst z dolnego pola (odszyfrowanie)
     zaszyfrowany = odszyfrowanie.get("0.0", ct.END).strip()
     if not zaszyfrowany:
@@ -134,7 +134,7 @@ def odszyfruj():
         return
 
     # Odszyfruj tekst przy użyciu funkcji odszyfrujTekst z modułu AES
-    jawny = odszyfrujTekst(zaszyfrowany, kluczTekstowy, kluczBitowy)
+    jawny = odszyfrujTekst(zaszyfrowany, kluczTekstowy, bitow)
 
     # Wyczyść górne pole (kodowanie) i wstaw odszyfrowany tekst
     kodowanie.delete("0.0", tk.END)
