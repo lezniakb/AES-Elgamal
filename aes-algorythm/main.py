@@ -142,23 +142,6 @@ def odszyfruj():
 
     CTkMessagebox(title="Sukces", message="Tekst został odszyfrowany!", icon="check", icon_size=(61, 61))
 
-def zapiszPlik():
-    sciezka_pliku = filedialog.asksaveasfilename(
-        title="Zapisz zaszyfrowany tekst",
-        defaultextension=".txt",
-        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
-    )
-    if not sciezka_pliku:
-        CTkMessagebox(title="Uwaga", message="Nie wybrano miejsca do zapisu", icon="warning", icon_size=(61,61))
-        return
-    tekst = odszyfrowanie.get("0.0", tk.END).strip()
-    try:
-        with open(sciezka_pliku, "w", encoding="utf-8") as plik:
-            plik.write(tekst)
-        CTkMessagebox(title="Sukces", message="Zapisano zaszyfrowany tekst!", icon="check", icon_size=(61,61))
-    except Exception as e:
-        CTkMessagebox(title="Błąd", message=f"Nie udało się zapisać pliku:\n{e}", icon="warning", icon_size=(61,61))
-
 def generujKlucz():
     # pobierz wybrany rozmiar klucza
     rozmiar_klucza = wyborKluczaTxt.get()
@@ -189,9 +172,44 @@ def wczytajKlucz():
     klucz.insert(0, klucz_odczytany.decode("utf-8"))
     CTkMessagebox(title="Udało się!", message="Klucz został wczytany pomyślnie!", icon="check", icon_size=(61,61))
 
+def zapiszOdkodowany():
+    sciezka_pliku = filedialog.asksaveasfilename(
+        title="Zapisz odszyfrowany plik",
+        defaultextension=".txt",
+        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="Uwaga", message="Nie wybrano miejsca do zapisu", icon="warning", icon_size=(61, 61))
+        return
+    tekst = kodowanie.get("0.0", tk.END)
+    bajty = tekst.encode("utf-8", errors="surrogateescape")
+    try:
+        with open(sciezka_pliku, "wb") as plik:
+            plik.write(bajty)
+        CTkMessagebox(title="Sukces", message="Zapisano odszyfrowany plik!", icon="check", icon_size=(61, 61))
+    except Exception as e:
+        CTkMessagebox(title="Błąd", message=f"Nie udało się zapisać pliku:\n{e}", icon="warning", icon_size=(61, 61))
+
+def zapiszPlik():
+    sciezka_pliku = filedialog.asksaveasfilename(
+        title="Zapisz zaszyfrowany plik",
+        defaultextension=".txt",
+        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="Uwaga", message="Nie wybrano miejsca do zapisu", icon="warning", icon_size=(61,61))
+        return
+    tekst = odszyfrowanie.get("0.0", tk.END)
+    try:
+        with open(sciezka_pliku, "w", encoding="utf-8") as plik:
+            plik.write(tekst)
+        CTkMessagebox(title="Sukces", message="Zapisano zaszyfrowany plik!", icon="check", icon_size=(61,61))
+    except Exception as e:
+        CTkMessagebox(title="Błąd", message=f"Nie udało się zapisać pliku:\n{e}", icon="warning", icon_size=(61,61))
+
 def wczytajZaszyfrowany():
     sciezka_pliku = filedialog.askopenfilename(
-        title="Wybierz plik zaszyfrowanego tekstu",
+        title="Wybierz plik zaszyfrowany",
         filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
     )
     if not sciezka_pliku:
@@ -200,22 +218,24 @@ def wczytajZaszyfrowany():
     with open(sciezka_pliku, "rb") as plik:
         zawartosc_pliku = plik.read()
     odszyfrowanie.delete("0.0", tk.END)
-    odszyfrowanie.insert("0.0", zawartosc_pliku.decode("utf-8", errors="ignore"))
+    odszyfrowanie.insert("0.0", zawartosc_pliku.decode("utf-8"))
     CTkMessagebox(title="Sukces", message="Plik został wczytany", icon="check", icon_size=(61,61))
 
 def wybierzPlik():
-    # funkcja do wyboru pliku do szyfrowania/odszyfrowania, uzywamy istniejacego okna
+    # funkcja do wyboru pliku do szyfrowania, uzywamy istniejacego okna
     sciezka_pliku = filedialog.askopenfilename(
-        title="Wybierz plik do zaszyfrowania/odszyfrowania",
+        title="Wybierz plik do zaszyfrowania",
         filetypes=[("wszystkie pliki", "*.*")]
     )
     if not sciezka_pliku:
         CTkMessagebox(title="info", message="Nie wybrano pliku", icon="info", icon_size=(61,61))
         return
     with open(sciezka_pliku, "rb") as plik:
-        zawartosc_pliku = plik.read()
+        zawartosc = plik.read()
+
     kodowanie.delete("0.0", tk.END)
-    kodowanie.insert("0.0", zawartosc_pliku.decode("utf-8", errors="ignore"))
+    tekst = zawartosc.decode("utf-8", errors="surrogateescape")
+    kodowanie.insert("0.0", tekst)
     CTkMessagebox(title="Udało się", message="Plik został wczytany", icon="check", icon_size=(61,61))
 
 
@@ -264,7 +284,8 @@ srodek.pack(padx=10, pady=10, fill="both", expand=False)
 
 # przyciski w srodku
 # wczytywanie z pliku
-kodowaniePlik = ct.CTkButton(srodek, text="Wczytaj plik", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//15), command=wybierzPlik)
+kodowaniePlik = ct.CTkButton(srodek, text="Wczytaj plik", font=ustawienia[4], width=(ustawienia[1]//6), height=(ustawienia[2]//12), command=wybierzPlik)
+zapisaniePlik = ct.CTkButton(srodek, text="Zapisz plik", font=ustawienia[4], width=(ustawienia[1]//6), height=(ustawienia[2]//12), command=zapiszOdkodowany)
 
 # szyfruj i odszyfruj (przycisk)
 szyfruj = ct.CTkButton(srodek, text="Zaszyfruj \u2193", font=ustawienia[4], width=(ustawienia[1]//4), height=(ustawienia[2]//14), command=szyfruj)
@@ -278,7 +299,8 @@ klucz = ct.CTkEntry(srodek, font=ustawienia[4], width=(int(ustawienia[1]/1.5)), 
 wczytywaczKlucza = ct.CTkButton(srodek, text="Wczytaj klucz z pliku", font=ustawienia[4], command=wczytajKlucz)
 
 # wstaw przyciski
-kodowaniePlik.place(relx=0.30, rely=0.25, anchor=tk.CENTER)
+kodowaniePlik.place(relx=0.20, rely=0.25, anchor=tk.CENTER)
+zapisaniePlik.place(relx=0.42, rely=0.25, anchor=tk.CENTER)
 szyfruj.place(relx=0.70, rely=0.20, anchor=tk.CENTER)
 odszyfruj.place(relx=0.70, rely=0.50, anchor=tk.CENTER)
 
@@ -306,33 +328,3 @@ zapiszBtn = ct.CTkButton(ramka, text="Zapisz zaszyfrowany plik", font=ustawienia
 zapiszBtn.pack(padx=10, pady=5)
 
 root.mainloop()
-
-"""
-SPOSÓB DZIAŁANIA
-
-1. Bierzemy nasz klucz szyfrowania (o długości 128, 192 lub 256 bitów).
-Z niego generujemy pod-klucze (round keys) które rotacyjnie się zmieniają co jedną rundę.
-Ilość pod-kluczy to (liczba rund + 1)
-Dzięki temu mamy podklucz do początkowej operacji (AddRoundKey) oraz do każdej rundy szyfrowania.
-
-2. Initial AddRoundKey – Początkowe XORowanie Bloku z Kluczem
-Pierwsza operacja na danych wejściowych (blokach) przed rozpoczęciem głównych rund
-Cały blok danych (który jest reprezentowany jako macierz 4x4 bajtów)
-jest XORowany z pierwszym wygenerowanym pod-kluczem.
-
-3. Główne Rundy (9, 11 lub 13) – Kolejne Etapy Szyfrowania
-Każda z rund ma kilka operacji:
-a) SubBytes
-    Każdy bajt w macierzyjest zastępowany wartością z S-boxa
-b) ShiftRows
-    przesuwamy wiersze. Pierwszego nie przesuwamy, drugi przesuwamy o jeden w lewo,
-    trzeci wiersz przesuwamy o 2 pola w lewo, czwarty o 3 pola w lewo.
-c) MixColumns
-    Każda kolumna macierzy jest traktowana jako wielomian i mnożona przez stałą macierz.
-    mnożenie można zrealizować jako przesunięcie bitowe w lewo (x << 1); 
-    jeśli najbardziej znaczący bit jest równy 1, następuje dodatkowe XOR z 0x1b (odpowiednik modulo wielomianu).
-d) AddRoundKey
-    Cały blok jest ponownie XORowany i powtarza się od punktu a)
-    
-Ostatnia runda nie robi mix columns.
-"""

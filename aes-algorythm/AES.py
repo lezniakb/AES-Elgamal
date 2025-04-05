@@ -357,7 +357,7 @@ def zakodujTekst(text, tekstKlucza, lenKlucz):
 
     zakodowaneBloki = []
     # zakoduj tekst na bajty
-    data = text.encode("utf-8")
+    data = text.encode("utf-8", errors="surrogateescape")
 
     # przetwarzanie danych - bloki co 16 bajtow
     for i in range(0, len(data), 16):
@@ -435,6 +435,6 @@ def odszyfrujTekst(zaszyfrowanyTekst, key_text, lenKlucz):
 
     # usuniecie bajtow zer (ktore byly dopelnieniem)
     bajtyOczyszczone = odszyfrowaneBajty.rstrip(b'\x00')
-    tekst = bajtyOczyszczone.decode("utf-8", errors="ignore")
+    tekst = bajtyOczyszczone.decode("utf-8", errors="surrogateescape")
     return tekst
 
