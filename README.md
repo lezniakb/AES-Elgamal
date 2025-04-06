@@ -8,7 +8,7 @@ Nie jest dozwolone korzystanie z funkcji w stylu szyfrowanieAES()/deszyfrowanieA
 
 ### Do zrobienia
 - [x] Sprawdzić działanie programu na innej maszynie - zweryfikować rozmiar GUI, działanie szyfrowania i deszyfrowania.
-- [ ] Utworzyć program .exe, który będzie zawierać wszystkie wymagane biblioteki. Skrypt w formie .py nie zadziała na maszynie, która nie posiada wymaganych dodatkowych bibliotek.
+- [x] Utworzyć program .exe, który będzie zawierać wszystkie wymagane biblioteki. Skrypt w formie .py nie zadziała na maszynie, która nie posiada wymaganych dodatkowych bibliotek.
 
 ## Funkcjonalność
 - [x] 1. Utworzenie interfejsu użytkownika z oknami tekstowymi, przyciskami
