@@ -1,14 +1,7 @@
-# pip install customtkinter
-# https://customtkinter.tomschimansky.com/
-# koniecznie trzeba potem zrobic z pythona .exe !
-
-# gui
 import customtkinter as ct
 import tkinter as tk
 from tkinter import filedialog
 from CTkMessagebox import CTkMessagebox
-
-from crypto.Random import get_random_bytes
 from random import choice
 import string
 from AES import zakodujTekst, odszyfrujTekst
@@ -30,9 +23,9 @@ def ustawOkno():
     print(f"[INFO] szerokość={szerokosc}, wysokość={wysokosc}, czcionka={czcionka}")
     return [tytul, szerokosc, wysokosc, rozszerzalnosc, czcionka]
 
-def oknoTekstowe(root, width=100, height=100, palette=None, **kwargs):
+def oknoTekstowe(glowneOkno, width=100, height=100, palette=None, **kwargs):
     # utworz ramke (okno) jako tlo oraz pole tekstowe
-    okno = ct.CTkFrame(root, **kwargs)
+    okno = ct.CTkFrame(glowneOkno, **kwargs)
     wpisane = ct.CTkTextbox(okno, fg_color=palette["podstawowy2"], width=width, height=height)
     wpisane.pack(fill="both", expand=True)
 
@@ -244,8 +237,6 @@ def wybierzPlik():
 # paleta barw
 kolory = {"podstawowy1":"#1A1A19",
           "podstawowy2":"#123524",
-          "podstawowy3":"#255F38",
-          "podstawowy4":"#1F7D53",
           "tekst":"#FFFFFF",
           "tekstWylaczony":"#808080"}
 
