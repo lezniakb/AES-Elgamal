@@ -165,7 +165,7 @@ def podzielKlucz(W, lenKlucz):
     # iloscRund = 10 lub 12 lub 14 (128bit:10)
     iloscRund = rundyKluczy[lenKlucz] + 1
     # iterujemy przez wszystkie rundy
-    for i in range(rundyKluczy[lenKlucz] + 1):
+    for i in range(iloscRund):
         klucz = 0
         # polacz 4 nastepne 32-bit slowa aby dostac 128bit klucz rundowy
         for j in range(4):
