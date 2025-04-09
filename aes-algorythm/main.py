@@ -1,6 +1,6 @@
 #######################################################################################
 #										                                              #
-# Plik		: main.py, AES.py						                                  #
+# Pliki		: main.py, AES.py						                                  #
 # Ćwiczenie	: Napisać program szyfrujący/deszyfrujący dane wprowadzone przez          #
 #		      użytkownika lub z pliku wykorzystując algorytm AES.		              #
 # Autorzy	: Łężniak Bartosz 251574, Binkowska Maja 251484, czwartek. 12.15          #

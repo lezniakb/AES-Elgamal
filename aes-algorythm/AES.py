@@ -1,3 +1,14 @@
+#######################################################################################
+#										                                              #
+# Pliki		: main.py, AES.py						                                  #
+# Ćwiczenie	: Napisać program szyfrujący/deszyfrujący dane wprowadzone przez          #
+#		      użytkownika lub z pliku wykorzystując algorytm AES.		              #
+# Autorzy	: Łężniak Bartosz 251574, Binkowska Maja 251484, czwartek. 12.15          #
+# Data		: 10.04.2025							                                  #
+# Uwagi		: Zestaw VI							                                      #
+#										                                              #
+#######################################################################################
+
 # s-box i odwrocony s-box
 # tablica, która służy do podstawienia bajtów w szyfrowaniu i deszyfrowaniu
 sbox = (
