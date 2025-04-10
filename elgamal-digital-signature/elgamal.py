@@ -1,115 +1,108 @@
-import random, math, hashlib
+import math, hashlib, secrets, random
 
-def modinv(a, m):
-    """Compute the modular inverse using the extended Euclidean algorithm."""
-
-    def egcd(a, b):
+def odwrotnoscModularna(a, m):
+    # funkcja liczaca modularna odwrotnosc a modulo m
+    def rozszerzonyNwd(a, b):
         if a == 0:
             return b, 0, 1
-        g, x, y = egcd(b % a, a)
-        return g, y - (b // a) * x, x
+        nwd, x, y = rozszerzonyNwd(b % a, a)
+        return nwd, y - (b // a) * x, x
 
-    g, x, _ = egcd(a, m)
-    if g != 1:
-        raise Exception("Modular inverse does not exist")
+    nwd, x, _ = rozszerzonyNwd(a, m)
+    if nwd != 1:
+        return None
     return x % m
 
-
-def prime_factors(n):
-    """Return the distinct prime factors of n."""
-    factors = set()
+def dzielnikiPierwsze(n):
+    # funkcja zwraca liste roznych dzielnikow pierwszych liczby n
+    dzielniki = set()
     while n % 2 == 0:
-        factors.add(2)
+        dzielniki.add(2)
         n //= 2
     i = 3
     while i * i <= n:
         while n % i == 0:
-            factors.add(i)
+            dzielniki.add(i)
             n //= i
         i += 2
     if n > 1:
-        factors.add(n)
-    return list(factors)
+        dzielniki.add(n)
+    return list(dzielniki)
 
-
-def find_primitive_root(q):
-    """
-    Finds a primitive root modulo the prime q.
-    For each candidate g from 2 to q-1, we check that for every prime factor f of (q-1):
-         g^((q-1)/f) mod q != 1.
-    """
-    phi = q - 1
-    factors = prime_factors(phi)
-    for g in range(2, q):
-        flag = True
-        for factor in factors:
-            if pow(g, phi // factor, q) == 1:
-                flag = False
+def znajdzPierwotnyPierwiastek(liczbaQ):
+    # funkcja szuka pierwotnego pierwiastka modulo liczbaQ
+    phi = liczbaQ - 1
+    dzielniki = dzielnikiPierwsze(phi)
+    for pierwiastek in range(2, liczbaQ):
+        flaga = True
+        for dzielnik in dzielniki:
+            if pow(pierwiastek, phi // dzielnik, liczbaQ) == 1:
+                flaga = False
                 break
-        if flag:
-            return g
+        if flaga:
+            return pierwiastek
     return None
 
-
-# =========================================
-# ElGamal Digital Signature Functions
-# =========================================
-
-def generate_elgamal_keys():
+def generujKluczeElgamal():
     """
-    Generates an ElGamal digital signature key pair.
-    For demonstration we choose a small prime q from a preset list.
-    The private key is XA (1 <= XA < q-1) and the public key is YA = a^XA mod q.
-    The global parameters are q and a (a primitive root of q).
+    funkcja generujaca pare kluczy elgamal.
+    do przykladu wybieramy mala liczbe pierwsza z ustalonej listy.
+    klucz prywatny (kluczPrywatny) jest losowa liczba z przedzialu [1, liczbaQ - 1],
+    a klucz publiczny (kluczPubliczny) to wynik: generator^kluczPrywatny mod liczbaQ.
+    zwracane sa: (liczbaQ, generator, kluczPrywatny, kluczPubliczny).
     """
-    q = random.choice([19, 467, 7919])  # For demo; in production, use large primes.
-    a = find_primitive_root(q)
-    XA = random.randint(1, q - 2)
-    YA = pow(a, XA, q)
-    return (q, a, XA, YA)
+    liczbaQ = secrets.choice([71993, 100999, 152093, 202409, 272329, 336163, 396061, 410233, 470201, 499879])
+    generator = znajdzPierwotnyPierwiastek(liczbaQ)
+    kluczPrywatny = random.randint(1, liczbaQ - 2)
+    kluczPubliczny = pow(generator, kluczPrywatny, liczbaQ)
+    return (liczbaQ, generator, kluczPrywatny, kluczPubliczny)
 
 
-def elgamal_sign(message, keys):
+def elgamalPodpis(wiadomosc, klucze):
     """
-    Signs a message using the ElGamal digital signature scheme.
-
-    Steps:
-      1. Compute m = H(M) mod (q-1), where H is SHA256.
-      2. Choose a random integer K ∈ [1, q-1] with gcd(K, q-1) = 1.
-      3. Compute S1 = a^K mod q.
-      4. Compute K⁻¹ mod (q-1).
-      5. Compute S2 = K⁻¹ * (m - XA * S1) mod (q-1).
-
-    Returns a tuple (S1, S2) as the signature.
+    optymalizowana funkcja do podpisywania elgamal.
+    zwraca krotke (podpisCzesc1, podpisCzesc2) reprezentujaca podpis.
     """
-    q, a, XA, YA = keys
-    # Compute hash value m. (Reduce the SHA256 digest modulo (q-1) so 0 <= m <= q-1.)
-    m = int(hashlib.sha256(message.encode('utf-8')).hexdigest(), 16) % (q - 1)
-    # Choose K with gcd(K, q-1) = 1.
-    K = random.randint(1, q - 1)
-    while math.gcd(K, q - 1) != 1:
-        K = random.randint(1, q - 1)
-    S1 = pow(a, K, q)
-    invK = modinv(K, q - 1)
-    S2 = (invK * (m - XA * S1)) % (q - 1)
-    return (S1, S2)
+    liczbaQ, generator, kluczPrywatny, kluczPubliczny = klucze
+    modWartosc = liczbaQ - 1  # obliczamy raz
+    # oblicz hash wiadomosci i zredukuj modulo (liczbaQ - 1)
+    hashWiadomosci = int(hashlib.sha256(wiadomosc.encode('utf-8')).hexdigest(), 16) % modWartosc
+
+    # uzywamy modulu secrets dla bezpiecznego wyboru losowej liczby
+    while True:
+        losowaLiczba = secrets.randbelow(modWartosc) + 1  # losowa liczba z przedzialu [1, liczbaQ - 1]
+        if math.gcd(losowaLiczba, modWartosc) == 1:
+            break
+
+    # oblicz podpis czesc 1: s1 = generator^losowaLiczba mod liczbaQ
+    podpisCzesc1 = pow(generator, losowaLiczba, liczbaQ)
+    # oblicz modularna odwrotnosc losowej liczby modulo modWartosc
+    odwrotnoscLiczby = odwrotnoscModularna(losowaLiczba, modWartosc)
+    # oblicz podpis czesc 2: s2 = odwrotnoscLiczby * (hashWiadomosci - kluczPrywatny * podpisCzesc1) mod modWartosc
+    podpisCzesc2 = (odwrotnoscLiczby * (hashWiadomosci - kluczPrywatny * podpisCzesc1)) % modWartosc
+
+    # opcjonalnie: sprawdzenie zakresu podpisCzesc1 i podpisCzesc2
+    if not (1 <= podpisCzesc1 < liczbaQ):
+        raise ValueError("podpisCzesc1 nie mieści się w oczekiwanym zakresie (1 <= s1 < liczbaQ).")
+    if not (0 <= podpisCzesc2 < modWartosc):
+        raise ValueError("podpisCzesc2 nie mieści się w oczekiwanym zakresie (0 <= s2 < liczbaQ-1).")
+
+    return (podpisCzesc1, podpisCzesc2)
 
 
-def elgamal_verify(message, signature, keys):
+def elgamalWeryfikuj(wiadomosc, podpis, klucze):
     """
-    Verifies the ElGamal digital signature.
-
-    Steps:
-      1. Compute m = H(M) mod (q-1).
-      2. Compute V1 = a^m mod q.
-      3. Compute V2 = (YA^(S1) * S1^(S2)) mod q.
-
-    Returns True if the signature is valid (V1 equals V2), otherwise False.
+    funkcja sprawdzajaca podpis cyfrowy elgamal.
+    kroki:
+      1. oblicz hash wiadomosci modulo (liczbaQ - 1).
+      2. oblicz wartosc1 = generator^hashWiadomosci mod liczbaQ.
+      3. oblicz wartosc2 = (kluczPubliczny^(podpisCzesc1) * podpisCzesc1^(podpisCzesc2)) mod liczbaQ.
+    zwraca true, jesli podpis jest poprawny (wartosc1 rowna wartosc2), inaczej false.
     """
-    q, a, XA, YA = keys
-    S1, S2 = signature
-    m = int(hashlib.sha256(message.encode('utf-8')).hexdigest(), 16) % (q - 1)
-    V1 = pow(a, m, q)
-    V2 = (pow(YA, S1, q) * pow(S1, S2, q)) % q
-    return V1 == V2
-
+    liczbaQ, generator, kluczPrywatny, kluczPubliczny = klucze
+    podpisCzesc1, podpisCzesc2 = podpis
+    hashWiadomosci = int(hashlib.sha256(wiadomosc.encode('utf-8')).hexdigest(), 16) % (liczbaQ - 1)
+    wartosc1 = pow(generator, hashWiadomosci, liczbaQ)
+    wartosc2 = (pow(kluczPubliczny, podpisCzesc1, liczbaQ) * pow(podpisCzesc1, podpisCzesc2, liczbaQ)) % liczbaQ
+    zwracam = wartosc1 == wartosc2
+    return zwracam
