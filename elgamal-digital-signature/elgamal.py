@@ -1,4 +1,4 @@
-import math, hashlib, secrets, random
+import math, hashlib, secrets, sympy
 
 def odwrotnoscModularna(a, m):
     # funkcja liczaca modularna odwrotnosc a modulo m
@@ -51,9 +51,15 @@ def generujKluczeElgamal():
     a klucz publiczny (kluczPubliczny) to wynik: generator^kluczPrywatny mod liczbaQ.
     zwracane sa: (liczbaQ, generator, kluczPrywatny, kluczPubliczny).
     """
-    liczbaQ = secrets.choice([71993, 100999, 152093, 202409, 272329, 336163, 396061, 410233, 470201, 499879])
+    pierwsze = []
+    for i in range(10):
+        # wybierz 10 losowych liczb pierwszych z przedzialu 500 000  --- 2 000 000
+        znaleziona = sympy.randprime(500000, 2000000)
+        pierwsze.append(znaleziona)
+    # wybierz jedna z nich jako liczbe Q
+    liczbaQ = secrets.choice(pierwsze)
     generator = znajdzPierwotnyPierwiastek(liczbaQ)
-    kluczPrywatny = random.randint(1, liczbaQ - 2)
+    kluczPrywatny = secrets.randbelow(liczbaQ - 2) + 1
     kluczPubliczny = pow(generator, kluczPrywatny, liczbaQ)
     return (liczbaQ, generator, kluczPrywatny, kluczPubliczny)
 
