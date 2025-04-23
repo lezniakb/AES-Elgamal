@@ -29,33 +29,53 @@ def wybierzPlik():
 
 
 def wybierzPodpis():
-    filename = filedialog.askopenfilename(defaultextension=".txt",
-        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")])
-    if filename:
-        with open(filename, "r", encoding="utf-8") as f:
-            content = f.read()
+    sciezka_pliku = filedialog.askopenfilename(
+        title="Wybierz podpis cyfrowy",
+        filetypes=[("wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="info", message="Nie wybrano pliku", icon="info", icon_size=(61,61))
+        return
+    with open(sciezka_pliku, "rb") as plik:
+        zawartosc = plik.read()
         odszyfrowanie.delete("0.0", tk.END)
-        odszyfrowanie.insert("0.0", content)
+        odszyfrowanie.insert("0.0", zawartosc)
         CTkMessagebox(title="success", message="Plik wczytany pomyślnie!", icon="info", icon_size=(61, 61))
 
 def zapiszPlik():
-    filename = filedialog.asksaveasfilename(defaultextension=".txt",
-        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")])
-    if filename:
-        with open(filename, "w", encoding="utf-8") as f:
-            content = kodowanie.get("0.0", ct.END)
-            f.write(content)
-        CTkMessagebox(title="success", message="Plik zapisany pomyślnie!", icon="info", icon_size=(61, 61))
+    sciezka_pliku = filedialog.asksaveasfilename(
+        title="Zapisz oryginalny plik",
+        defaultextension=".txt",
+        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="Uwaga", message="Nie wybrano miejsca do zapisu", icon="warning", icon_size=(61, 61))
+        return
+    tekst = kodowanie.get("0.0", tk.END)
+    bajty = tekst.encode("utf-8", errors="surrogateescape")
+    try:
+        with open(sciezka_pliku, "wb") as plik:
+            plik.write(bajty)
+        CTkMessagebox(title="Sukces", message="Zapisano oryginalny plik!", icon="check", icon_size=(61, 61))
+    except Exception as e:
+        CTkMessagebox(title="Błąd", message=f"Nie udało się zapisać pliku:\n{e}", icon="warning", icon_size=(61, 61))
 
 def zapiszPodpis():
-    """zapisz podpis (z dolnego pola tekstowego) do pliku"""
-    filename = filedialog.asksaveasfilename(defaultextension=".txt",
-        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")])
-    if filename:
-        with open(filename, "w", encoding="utf-8") as f:
-            content = odszyfrowanie.get("0.0", ct.END)
-            f.write(content)
-        CTkMessagebox(title="success", message="Plik zapisany pomyślnie!", icon="info", icon_size=(61, 61))
+    sciezka_pliku = filedialog.asksaveasfilename(
+        title="Zapisz cyfrowy certyfikat",
+        defaultextension=".txt",
+        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="Uwaga", message="Nie wybrano miejsca do zapisu", icon="warning", icon_size=(61,61))
+        return
+    tekst = odszyfrowanie.get("0.0", tk.END)
+    try:
+        with open(sciezka_pliku, "w", encoding="utf-8") as plik:
+            plik.write(tekst)
+        CTkMessagebox(title="Sukces", message="Zapisano cyfrowy certyfikat!", icon="check", icon_size=(61,61))
+    except Exception as e:
+        CTkMessagebox(title="Błąd", message=f"Nie udało się zapisać pliku:\n{e}", icon="warning", icon_size=(61,61))
 
 
 
@@ -300,7 +320,7 @@ odszyfrowanie.pack(padx=10, pady=5)
 wczytajPlikBtn = ct.CTkButton(
     ramka, text="Wczytaj podpis z pliku", font=ustawienia[4],
     width=(int(ustawienia[1] / 3)), height=(int(ustawienia[2] / 17)),
-    command=wybierzPlik
+    command=wybierzPodpis
 )
 wczytajPlikBtn.pack(padx=10, pady=5)
 
