@@ -72,7 +72,7 @@ def elgamalPodpis(wiadomosc, klucze):
     liczbaQ, generator, kluczPrywatny, kluczPubliczny = klucze
     modWartosc = liczbaQ - 1  # obliczamy raz
     # oblicz hash wiadomosci i zredukuj modulo (liczbaQ - 1)
-    hashWiadomosci = int(hashlib.sha256(wiadomosc.encode('utf-8')).hexdigest(), 16) % modWartosc
+    hashWiadomosci = int(hashlib.sha256(wiadomosc.encode('utf-8', 'surrogatepass')).hexdigest(), 16) % modWartosc
 
     # uzywamy modulu secrets dla bezpiecznego wyboru losowej liczby
     while True:
@@ -107,7 +107,7 @@ def elgamalWeryfikuj(wiadomosc, podpis, klucze):
     """
     liczbaQ, generator, kluczPrywatny, kluczPubliczny = klucze
     podpisCzesc1, podpisCzesc2 = podpis
-    hashWiadomosci = int(hashlib.sha256(wiadomosc.encode('utf-8')).hexdigest(), 16) % (liczbaQ - 1)
+    hashWiadomosci = int(hashlib.sha256(wiadomosc.encode('utf-8', 'surrogatepass')).hexdigest(), 16) % (liczbaQ - 1)
     wartosc1 = pow(generator, hashWiadomosci, liczbaQ)
     wartosc2 = (pow(kluczPubliczny, podpisCzesc1, liczbaQ) * pow(podpisCzesc1, podpisCzesc2, liczbaQ)) % liczbaQ
     zwracam = wartosc1 == wartosc2

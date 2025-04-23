@@ -11,15 +11,22 @@ from elgamal import generujKluczeElgamal, elgamalPodpis, elgamalWeryfikuj
 # funkcje obslugi plikow
 
 def wybierzPlik():
-    """zaladuj wiadomosc z pliku txt do pola tekstowego"""
-    filename = filedialog.askopenfilename(defaultextension=".txt",
-        filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")])
-    if filename:
-        with open(filename, "r", encoding="utf-8") as f:
-            content = f.read()
-        kodowanie.delete("0.0", tk.END)
-        kodowanie.insert("0.0", content)
-        CTkMessagebox(title="success", message="Plik wczytany pomyślnie!", icon="info", icon_size=(61, 61))
+    # funkcja do wyboru pliku do szyfrowania, uzywamy istniejacego okna
+    sciezka_pliku = filedialog.askopenfilename(
+        title="Wybierz plik do zaszyfrowania",
+        filetypes=[("wszystkie pliki", "*.*")]
+    )
+    if not sciezka_pliku:
+        CTkMessagebox(title="info", message="Nie wybrano pliku", icon="info", icon_size=(61,61))
+        return
+    with open(sciezka_pliku, "rb") as plik:
+        zawartosc = plik.read()
+
+    kodowanie.delete("0.0", tk.END)
+    tekst = zawartosc.decode("utf-8", errors="surrogateescape")
+    kodowanie.insert("0.0", tekst)
+    CTkMessagebox(title="Udało się", message="Plik został wczytany", icon="check", icon_size=(61,61))
+
 
 def wybierzPodpis():
     filename = filedialog.askopenfilename(defaultextension=".txt",
