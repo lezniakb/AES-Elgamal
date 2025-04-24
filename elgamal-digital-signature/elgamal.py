@@ -54,12 +54,12 @@ def generujKluczeElgamal():
     pierwsze = []
     for i in range(10):
         # wybierz 10 losowych liczb pierwszych z przedzialu 500 000  --- 2 000 000
-        znaleziona = sympy.randprime(500000, 2000000)
+        znaleziona = sympy.randprime(500000, 2000000) # do sprawdzenia
         pierwsze.append(znaleziona)
     # wybierz jedna z nich jako liczbe Q
     liczbaQ = secrets.choice(pierwsze)
     generator = znajdzPierwotnyPierwiastek(liczbaQ)
-    kluczPrywatny = secrets.randbelow(liczbaQ - 2) + 1
+    kluczPrywatny = secrets.randbelow(liczbaQ - 2) + 1# do sprawdzenia
     kluczPubliczny = pow(generator, kluczPrywatny, liczbaQ)
     return (liczbaQ, generator, kluczPrywatny, kluczPubliczny)
 
@@ -77,7 +77,7 @@ def elgamalPodpis(wiadomosc, klucze):
     # uzywamy modulu secrets dla bezpiecznego wyboru losowej liczby
     while True:
         losowaLiczba = secrets.randbelow(modWartosc) + 1  # losowa liczba z przedzialu [1, liczbaQ - 1]
-        if math.gcd(losowaLiczba, modWartosc) == 1:
+        if math.gcd(losowaLiczba, modWartosc) == 1: # do sprawdzenia
             break
 
     # oblicz podpis czesc 1: s1 = generator^losowaLiczba mod liczbaQ
