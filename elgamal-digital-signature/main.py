@@ -152,10 +152,14 @@ def weryfikuj():
     wiadomosc pobierana jest z gornego pola tekstowego, a podpis (w formacie s1,s2)
     z dolnego pola tekstowego.
     """
-    global elgamalklucze
-    if elgamalklucze is None:
-        CTkMessagebox(title="error", message="najpierw wygeneruj lub zaladuj klucze!", icon="warning", icon_size=(61, 61))
+    klucz_tekst = klucz.get()
+    try:
+        q, a, xa, ya = [int(x.strip()) for x in klucz_tekst.split(",")]
+        klucz_pub = (q, a, xa, ya)
+    except Exception as e:
+        CTkMessagebox(title="error", message=f"błędny format klucza: {e}", icon="warning", icon_size=(61, 61))
         return
+
     message = kodowanie.get("0.0", ct.END).strip()
     sigText = odszyfrowanie.get("0.0", ct.END).strip()
     if not message or not sigText:
@@ -171,7 +175,7 @@ def weryfikuj():
     except Exception as e:
         CTkMessagebox(title="error", message="blad przy odczycie podpisu: " + str(e), icon="warning", icon_size=(61, 61))
         return
-    if elgamalWeryfikuj(message, signature, elgamalklucze):
+    if elgamalWeryfikuj(message, signature, klucz_pub):
         CTkMessagebox(title="success", message="podpis jest poprawny!", icon="check", icon_size=(61, 61))
     else:
         CTkMessagebox(title="error", message="podpis jest niepoprawny!", icon="warning", icon_size=(61, 61))
