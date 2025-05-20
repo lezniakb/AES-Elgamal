@@ -14,4 +14,4 @@ Nie jest dozwolone korzystanie z funkcji w stylu szyfrowanieAES()/deszyfrowanieA
 - [x] 1. Utworzenie interfejsu użytkownika z oknami tekstowymi, przyciskami
 - [x] 2. Implementacja szyfru AES - szyfrowanie, odszyfrowanie, generowanie i użycie sekretnego klucza
 - [x] 3. Odczyt i zapis do pliku zaszyfrowanych danych
-- [ ] 4. Implementacja szyfru Elgamal - realizacja podpisów cyfrowych
+- [x] 4. Implementacja szyfru Elgamal - realizacja podpisów cyfrowych
